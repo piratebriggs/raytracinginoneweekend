@@ -1,4 +1,5 @@
 ﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
@@ -47,6 +48,8 @@ namespace raytracinginoneweekend
             {
                 Parallel.For(0, ny, index => {
                     var j = ny - 1 - index;
+                    var rowSpan = image.GetPixelRowSpan(index);
+
                     for (int i = 0; i < nx; i++)
                     {
                         var col = new Vector3(0);
@@ -60,7 +63,7 @@ namespace raytracinginoneweekend
                         }
                         col /= (float)antiAlias.Count;
 
-                        image[i, index] = new Rgba32(col);
+                        rowSpan[i] = new Rgba32(col);
                     }
                 });
                 image.Save("test.png");
