@@ -1,6 +1,9 @@
-﻿using System;
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace raytracinginoneweekend
 {
@@ -42,27 +45,26 @@ namespace raytracinginoneweekend
             var horz = new Vector3(4,0,0);
             var vert = new Vector3(0,2,0);
 
-            Console.Write($"P3\n{nx} {ny}\n255\n");
-
             var world = new List<IHitable>();
             world.Add(new Sphere(new Vector3(0, 0, -1), 0.5f));
             world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100));
 
-            for (int j = ny - 1; j >= 0; j--)
+            using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
-                for (int i = 0; i < nx; i++)
-                {
-                    float u = (float)i / (float)nx;
-                    float v = (float)j / (float)ny;
+                Parallel.For(1, ny, index => {
+                    var j = ny - index;
+                    for (int i = 0; i < nx; i++)
+                    {
+                        float u = (float)i / (float)nx;
+                        float v = (float)j / (float)ny;
 
-                    var r = new Ray(origin, lower_left_corner +u * horz + v * vert);
-                    var col = Color(r, world);
+                        var r = new Ray(origin, lower_left_corner + u * horz + v * vert);
+                        var col = Color(r, world);
 
-                    var ir = (int)(255.99 * col.X);
-                    var ig = (int)(255.99 * col.Y);
-                    var ib = (int)(255.99 * col.Z);
-                    Console.Write( $"{ir} {ig} {ib}\n");
-                }
+                        image[i, ny-j] = new Rgba32(col);
+                    }
+                });
+                image.Save("test.png");
             }
         }
     }
