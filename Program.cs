@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace raytracinginoneweekend
 {
-    class Ray
+    public class Ray
     {
         public Ray(Vector3 origin, Vector3 direction)
         {
@@ -19,26 +20,14 @@ namespace raytracinginoneweekend
     class Program
     {
 
-        static float HitSphere(Vector3 center, float radius, Ray r)
-        {
-            var oc = r.Origin - center;
-            var a = Vector3.Dot(r.Direction, r.Direction);
-            var b = 2.0f * Vector3.Dot(oc, r.Direction);
-            var c = Vector3.Dot(oc, oc) - radius * radius;
-            var discriminant = b * b - 4 * a * c;
-            return (discriminant < 0) ? -1.0f : (-b - (float)Math.Sqrt(discriminant)) / (2.0f * a);
-        }
-
-        static Vector3 Color(Ray r) {
-            var spherePos = new Vector3(0, 0, -1);
-            var t = HitSphere(spherePos, 0.5f, r);
-            if(t > 0)
+        static Vector3 Color(Ray r, IList<IHitable> world) {
+            var rec = new HitRecord();
+            if(world.Hit(r,0.0f, float.MaxValue,ref rec))
             {
-                var N = Vector3.Normalize(r.PointAtParameter(t) - spherePos);
-                return 0.5f * new Vector3(N.X + 1, N.Y + 1, N.Z + 1);
+                return 0.5f * new Vector3(rec.Normal.X + 1, rec.Normal.Y + 1, rec.Normal.Z + 1);
             }
             var unit_direction = Vector3.Normalize(r.Direction);
-            t = 0.5f * (unit_direction.Y + 1.0f);
+            var t = 0.5f * (unit_direction.Y + 1.0f);
             return (1.0f - t) * new Vector3(1.0f, 1.0f, 1.0f) + t * new Vector3(0.5f, 0.7f, 1.0f);
         }
 
@@ -55,6 +44,10 @@ namespace raytracinginoneweekend
 
             Console.Write($"P3\n{nx} {ny}\n255\n");
 
+            var world = new List<IHitable>();
+            world.Add(new Sphere(new Vector3(0, 0, -1), 0.5f));
+            world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100));
+
             for (int j = ny - 1; j >= 0; j--)
             {
                 for (int i = 0; i < nx; i++)
@@ -63,7 +56,7 @@ namespace raytracinginoneweekend
                     float v = (float)j / (float)ny;
 
                     var r = new Ray(origin, lower_left_corner +u * horz + v * vert);
-                    var col = Color(r);
+                    var col = Color(r, world);
 
                     var ir = (int)(255.99 * col.X);
                     var ig = (int)(255.99 * col.Y);
