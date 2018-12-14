@@ -7,18 +7,6 @@ using System.Threading.Tasks;
 
 namespace raytracinginoneweekend
 {
-    public class Ray
-    {
-        public Ray(Vector3 origin, Vector3 direction)
-        {
-            A = origin; B = direction;
-        }
-        public Vector3 A { get; set; }
-        public Vector3 B { get; set; }
-        public Vector3 Origin { get { return A; } }
-        public Vector3 Direction { get { return B; } }
-        public Vector3 PointAtParameter(float t) { return A + t * B; }
-    }
 
     class Program
     {
@@ -57,8 +45,8 @@ namespace raytracinginoneweekend
 
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
-                Parallel.For(1, ny, index => {
-                    var j = ny - index;
+                Parallel.For(0, ny, index => {
+                    var j = ny - 1 - index;
                     for (int i = 0; i < nx; i++)
                     {
                         var col = new Vector3(0);
@@ -72,7 +60,7 @@ namespace raytracinginoneweekend
                         }
                         col /= (float)antiAlias.Count;
 
-                        image[i, ny-j] = new Rgba32(col);
+                        image[i, index] = new Rgba32(col);
                     }
                 });
                 image.Save("test.png");

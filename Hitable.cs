@@ -17,7 +17,7 @@ namespace raytracinginoneweekend
         bool Hit(Ray r, float tMin, float tMax, ref HitRecord rec);
     }
 
-    public static class HitableList
+    public static class HitableListExtensions
     {
         public static bool Hit(this IList<IHitable> list, Ray r, float tMin, float tMax, ref HitRecord rec)
         {

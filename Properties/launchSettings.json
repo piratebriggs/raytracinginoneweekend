@@ -1,8 +1,7 @@
 {
   "profiles": {
     "raytracinginoneweekend": {
-      "commandName": "Project",
-      "commandLineArgs": "> out.ppm"
+      "commandName": "Project"
     }
   }
 }
