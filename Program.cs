@@ -11,12 +11,24 @@ namespace raytracinginoneweekend
 
     class Program
     {
+        static CryptoRandom rnd = new CryptoRandom();
+
+        static Vector3 RandomInUnitSphere()
+        {
+            var p = new Vector3();
+            do
+            {
+                p = 2.0f * new Vector3(rnd.NextFloat(), rnd.NextFloat(), rnd.NextFloat()) - new Vector3(1,1,1);
+            } while (p.LengthSquared() >= 1.0f);
+            return p;
+        }
 
         static Vector3 Color(Ray r, IList<IHitable> world) {
             var rec = new HitRecord();
-            if (world.Hit(r, 0.0f, float.MaxValue, ref rec))
+            if (world.Hit(r, 0.001f, float.MaxValue, ref rec))
             {
-                return 0.5f * new Vector3(rec.Normal.X + 1, rec.Normal.Y + 1, rec.Normal.Z + 1);
+                Vector3 target = rec.P + rec.Normal + RandomInUnitSphere();
+                return 0.5f * Color(new Ray(rec.P, target - rec.P), world);
             }
             var unit_direction = Vector3.Normalize(r.Direction);
             var t = 0.5f * (unit_direction.Y + 1.0f);
@@ -28,7 +40,7 @@ namespace raytracinginoneweekend
             var x = new Vector3(0, 0, 0);
             int nx = 200;
             int ny = 100;
-
+            
             var world = new List<IHitable>();
             world.Add(new Sphere(new Vector3(0, 0, -1), 0.5f));
             world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100));
@@ -62,6 +74,7 @@ namespace raytracinginoneweekend
                             col += Color(r, world);
                         }
                         col /= (float)antiAlias.Count;
+                        col = new Vector3((float)Math.Sqrt(col.X), (float)Math.Sqrt(col.Y), (float)Math.Sqrt(col.Z));
 
                         rowSpan[i] = new Rgba32(col);
                     }
