@@ -2,20 +2,23 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Numerics;
+using raytracinginoneweekend.Materials;
 
 namespace raytracinginoneweekend
 {
     public class Sphere : IHitable
     {
 
-        public Sphere(Vector3 center, float radius)
+        public Sphere(Vector3 center, float radius, IMaterial material)
         {
             Center = center;
             Radius = radius;
+            Material = material;
         }
 
         public float Radius { get; set; }
         public Vector3 Center { get; set; }
+        public IMaterial Material { get; set; }
 
         public bool Hit(Ray r, float tMin, float tMax, ref HitRecord rec)
         {
@@ -47,6 +50,7 @@ namespace raytracinginoneweekend
             rec.T = temp;
             rec.P = r.PointAtParameter(rec.T);
             rec.Normal = (rec.P - Center) / Radius;
+            rec.Material = Material;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using raytracinginoneweekend.Materials;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
@@ -10,6 +11,7 @@ namespace raytracinginoneweekend
         public float T { get; set; }
         public Vector3 P { get; set; }
         public Vector3 Normal { get; set; }
+        public IMaterial Material { get; set; }
     }
 
     public interface IHitable

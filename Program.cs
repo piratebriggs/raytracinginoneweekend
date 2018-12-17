@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp;
+﻿using raytracinginoneweekend.Materials;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
@@ -11,24 +12,23 @@ namespace raytracinginoneweekend
 
     class Program
     {
-        static CryptoRandom rnd = new CryptoRandom();
+        public static CryptoRandom Rnd = new CryptoRandom();
 
-        static Vector3 RandomInUnitSphere()
-        {
-            var p = new Vector3();
-            do
-            {
-                p = 2.0f * new Vector3(rnd.NextFloat(), rnd.NextFloat(), rnd.NextFloat()) - new Vector3(1,1,1);
-            } while (p.LengthSquared() >= 1.0f);
-            return p;
-        }
 
-        static Vector3 Color(Ray r, IList<IHitable> world) {
+        static Vector3 Color(Ray r, IList<IHitable> world, int depth) {
             var rec = new HitRecord();
             if (world.Hit(r, 0.001f, float.MaxValue, ref rec))
             {
-                Vector3 target = rec.P + rec.Normal + RandomInUnitSphere();
-                return 0.5f * Color(new Ray(rec.P, target - rec.P), world);
+                Ray scattered;
+                Vector3 attenuation;
+                if (depth < 50 && rec.Material.Scatter(r, rec, out attenuation, out scattered))
+                {
+                    return attenuation * Color(scattered, world, depth + 1);
+                }
+                else
+                {
+                    return new Vector3(0);
+                }
             }
             var unit_direction = Vector3.Normalize(r.Direction);
             var t = 0.5f * (unit_direction.Y + 1.0f);
@@ -42,8 +42,10 @@ namespace raytracinginoneweekend
             int ny = 100;
             
             var world = new List<IHitable>();
-            world.Add(new Sphere(new Vector3(0, 0, -1), 0.5f));
-            world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100));
+            world.Add(new Sphere(new Vector3(0, 0, -1), 0.5f, new Lambertian(new Vector3(0.8f, 0.3f, 0.3f))));
+            world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100, new Lambertian(new Vector3(0.8f, 0.8f, 0.0f))));
+            world.Add(new Sphere(new Vector3(1, 0, -1), 0.5f, new Metal(new Vector3(0.8f, 0.6f, 0.2f))));
+            world.Add(new Sphere(new Vector3(-1, 0, -1), 0.5f, new Metal(new Vector3(0.8f, 0.8f, 0.8f))));
 
             var cam = new Camera();
             var rnd = new Random(123);
@@ -71,7 +73,7 @@ namespace raytracinginoneweekend
                             float u = ((float)i + point.Item1) / (float)nx;
                             float v = ((float)j + point.Item2) / (float)ny;
                             var r = cam.GetRay(u, v);
-                            col += Color(r, world);
+                            col += Color(r, world, 0);
                         }
                         col /= (float)antiAlias.Count;
                         col = new Vector3((float)Math.Sqrt(col.X), (float)Math.Sqrt(col.Y), (float)Math.Sqrt(col.Z));
