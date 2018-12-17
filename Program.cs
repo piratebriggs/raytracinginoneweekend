@@ -44,8 +44,8 @@ namespace raytracinginoneweekend
             var world = new List<IHitable>();
             world.Add(new Sphere(new Vector3(0, 0, -1), 0.5f, new Lambertian(new Vector3(0.8f, 0.3f, 0.3f))));
             world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100, new Lambertian(new Vector3(0.8f, 0.8f, 0.0f))));
-            world.Add(new Sphere(new Vector3(1, 0, -1), 0.5f, new Metal(new Vector3(0.8f, 0.6f, 0.2f))));
-            world.Add(new Sphere(new Vector3(-1, 0, -1), 0.5f, new Metal(new Vector3(0.8f, 0.8f, 0.8f))));
+            world.Add(new Sphere(new Vector3(1, 0, -1), 0.5f, new Metal(new Vector3(0.8f, 0.6f, 0.2f), 0.8f)));
+            world.Add(new Sphere(new Vector3(-1, 0, -1), 0.5f, new Metal(new Vector3(0.8f, 0.8f, 0.8f), 0.3f)));
 
             var cam = new Camera();
             var rnd = new Random(123);
@@ -84,5 +84,16 @@ namespace raytracinginoneweekend
                 image.Save("test.png");
             }
         }
+
+        public static Vector3 RandomInUnitSphere()
+        {
+            var p = new Vector3();
+            do
+            {
+                p = 2.0f * new Vector3(Program.Rnd.NextFloat(), Program.Rnd.NextFloat(), Program.Rnd.NextFloat()) - new Vector3(1, 1, 1);
+            } while (p.LengthSquared() >= 1.0f);
+            return p;
+        }
+
     }
 }
