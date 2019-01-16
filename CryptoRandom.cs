@@ -5,7 +5,7 @@ using System.Text;
 
 namespace raytracinginoneweekend
 {
-    public class CryptoRandom
+    public class CryptoRandom : ImSoRandom
     {
         private RNGCryptoServiceProvider _provider;
         public CryptoRandom()

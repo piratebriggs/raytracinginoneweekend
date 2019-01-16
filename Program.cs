@@ -12,7 +12,7 @@ namespace raytracinginoneweekend
 
     class Program
     {
-        public static CryptoRandom Rnd = new CryptoRandom();
+        public static ImSoRandom Rnd;
 
 
         static Vector3 Color(Ray r, IList<IHitable> world, int depth) {
@@ -37,6 +37,8 @@ namespace raytracinginoneweekend
 
         static void Main(string[] args)
         {
+            Rnd = new SunsetquestRandom();
+
             var x = new Vector3(0, 0, 0);
             int nx = 800;
             int ny = 400;
