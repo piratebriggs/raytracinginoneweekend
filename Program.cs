@@ -46,8 +46,9 @@ namespace raytracinginoneweekend
             var world = new List<IHitable>();
             world.Add(new Sphere(new Vector3(0, 0, -1), 0.5f, new Lambertian(new Vector3(0.8f, 0.3f, 0.3f))));
             world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100, new Lambertian(new Vector3(0.8f, 0.8f, 0.0f))));
-            world.Add(new Sphere(new Vector3(1, 0, -1), 0.5f, new Metal(new Vector3(0.8f, 0.6f, 0.2f), 0.3f)));
+            world.Add(new Sphere(new Vector3(1, 0, -1), 0.5f, new Metal(new Vector3(0.8f, 0.6f, 0.2f), 0f)));
             world.Add(new Sphere(new Vector3(-1, 0, -1), 0.5f, new Dialectric(1.5f)));
+            world.Add(new Sphere(new Vector3(-1, 0, -1), -0.45f, new Dialectric(1.5f)));
 
             var cam = new Camera();
             var rnd = new Random(123);
