@@ -42,6 +42,7 @@ namespace raytracinginoneweekend
             var x = new Vector3(0, 0, 0);
             int nx = 800;
             int ny = 400;
+            int ns = 10;
             
             var world = new List<IHitable>();
             world.Add(new Sphere(new Vector3(0, 0, -1), 0.5f, new Lambertian(new Vector3(0.8f, 0.3f, 0.3f))));
@@ -53,14 +54,6 @@ namespace raytracinginoneweekend
             var cam = new Camera();
             var rnd = new Random(123);
 
-            var antiAlias = new List<Tuple<float, float>>() {
-                { new Tuple<float, float>(0.25f, 0.25f) },
-                { new Tuple<float, float>(0.25f, 0.75f) },
-                { new Tuple<float, float>(0.75f, 0.25f) },
-                { new Tuple<float, float>(0.75f, 0.75f) },
-                { new Tuple<float, float>(0.5f, 0.5f) }
-            };
-
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
                 Parallel.For(0, ny, index => {
@@ -71,14 +64,14 @@ namespace raytracinginoneweekend
                     {
                         var col = new Vector3(0);
 
-                        foreach(var point in antiAlias)
+                        for(var s = 0;  s < ns; s++)
                         {
-                            float u = ((float)i + point.Item1) / (float)nx;
-                            float v = ((float)j + point.Item2) / (float)ny;
+                            float u = ((float)i + Rnd.NextFloat()) / (float)nx;
+                            float v = ((float)j + Rnd.NextFloat()) / (float)ny;
                             var r = cam.GetRay(u, v);
                             col += Color(r, world, 0);
                         }
-                        col /= (float)antiAlias.Count;
+                        col /= (float)ns;
                         col = new Vector3((float)Math.Sqrt(col.X), (float)Math.Sqrt(col.Y), (float)Math.Sqrt(col.Z));
 
                         rowSpan[i] = new Rgba32(col);
