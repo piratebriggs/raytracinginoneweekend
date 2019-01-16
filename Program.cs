@@ -37,6 +37,8 @@ namespace raytracinginoneweekend
 
         static void Main(string[] args)
         {
+            var startTime = DateTime.Now;
+
             Rnd = new SunsetquestRandom();
 
             var x = new Vector3(0, 0, 0);
@@ -78,6 +80,9 @@ namespace raytracinginoneweekend
                     }
                 });
                 image.Save("test.png");
+                var duration = DateTime.Now - startTime;
+                Console.WriteLine($"Duration: {duration}");
+                Console.ReadLine();
             }
         }
 
