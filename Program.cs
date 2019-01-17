@@ -58,9 +58,13 @@ namespace raytracinginoneweekend
             world.Add(new Sphere(new Vector3(-1, 0, -1), 0.5f, new Dialectric(1.5f)));
             world.Add(new Sphere(new Vector3(-1, 0, -1), -0.45f, new Dialectric(1.5f)));
 
-            var cam = new Camera(new Vector3(-2,2,1), new Vector3(0, 0, -1), new Vector3(0, 1, 0), 90, (float)nx / (float)ny);
-            var rnd = new Random(123);
+            var lookFrom = new Vector3(3, 3, 2);
+            var lookAt = new Vector3(0, 0, -1);
+            var distToFocus = (lookFrom - lookAt ).Length();
+            var aperture = 2f;
 
+            var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus);
+            
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
                 Parallel.For(0, ny, index => {
@@ -98,6 +102,16 @@ namespace raytracinginoneweekend
             {
                 p = 2.0f * new Vector3(Program.Rnd.NextFloat(), Program.Rnd.NextFloat(), Program.Rnd.NextFloat()) - new Vector3(1, 1, 1);
             } while (p.LengthSquared() >= 1.0f);
+            return p;
+        }
+
+        public static Vector3 RandomInUnitDisk()
+        {
+            var p = new Vector3();
+            do
+            {
+                p = 2.0f * new Vector3(Program.Rnd.NextFloat(), Program.Rnd.NextFloat(), 0) - new Vector3(1, 1, 0);
+            } while (Vector3.Dot(p,p) >= 1.0f);
             return p;
         }
 
