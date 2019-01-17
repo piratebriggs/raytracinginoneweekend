@@ -7,12 +7,18 @@ namespace raytracinginoneweekend
 {
     public class Camera
     {
-        public Camera()
+        public Camera(Vector3 lookfrom, Vector3 lookat, Vector3 vup,  float vfov, float aspect)
         {
-            Origin = new Vector3(0.0f);
-            LowerLeftCorner = new Vector3(-2.0f, -1.0f, -1.0f);
-            Horizontal = new Vector3(4, 0, 0);
-            Vertical = new Vector3(0, 2, 0);
+            var theta = vfov * Math.PI / 180;
+            var halfHeight = (float)Math.Tan(theta / 2);
+            var halfWidth = aspect * halfHeight;
+            Origin = lookfrom;
+            var w = Vector3.Normalize(lookfrom - lookat);
+            var u = Vector3.Normalize(Vector3.Cross(vup, w));
+            var v = Vector3.Cross(w, u);
+            LowerLeftCorner = Origin - halfWidth * u - halfHeight * v - w;
+            Horizontal = 2 * halfWidth * u;
+            Vertical = 2 * halfHeight * v;
         }
 
         public Ray GetRay(float u, float v)

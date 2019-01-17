@@ -47,13 +47,18 @@ namespace raytracinginoneweekend
             int ns = 10;
             
             var world = new List<IHitable>();
+/*       
+            var R = (float)Math.Cos(Math.PI / 4);
+            world.Add(new Sphere(new Vector3(-R, 0, -1), R, new Lambertian(new Vector3(0f, 0f, 1f))));
+            world.Add(new Sphere(new Vector3(R, 0, -1), R, new Lambertian(new Vector3(1f, 0f, 0f))));
+*/
             world.Add(new Sphere(new Vector3(0, 0, -1), 0.5f, new Lambertian(new Vector3(0.8f, 0.3f, 0.3f))));
             world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100, new Lambertian(new Vector3(0.8f, 0.8f, 0.0f))));
             world.Add(new Sphere(new Vector3(1, 0, -1), 0.5f, new Metal(new Vector3(0.8f, 0.6f, 0.2f), 0f)));
             world.Add(new Sphere(new Vector3(-1, 0, -1), 0.5f, new Dialectric(1.5f)));
             world.Add(new Sphere(new Vector3(-1, 0, -1), -0.45f, new Dialectric(1.5f)));
 
-            var cam = new Camera();
+            var cam = new Camera(new Vector3(-2,2,1), new Vector3(0, 0, -1), new Vector3(0, 1, 0), 90, (float)nx / (float)ny);
             var rnd = new Random(123);
 
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
