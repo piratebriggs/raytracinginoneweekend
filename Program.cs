@@ -60,7 +60,13 @@ namespace raytracinginoneweekend
             var aperture = 2f;
 
             var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus);
-            
+
+            ImSoRandom[] rnd = new ImSoRandom[ns];
+            for (var index = 0; index < ns; index++) {
+                rnd[index] = new SunsetquestRandom();
+            }
+            var lockobj = new object();
+
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
                 for (int j = 0; j < ny; j++)
@@ -70,21 +76,14 @@ namespace raytracinginoneweekend
                     for (int i = 0; i < nx; i++)
                     {
                         var col = new Vector3(0);
-                        var lockobj = new object();
 
-                        Parallel.For(0, ns, () => (new SunsetquestRandom(), new Vector3(0)), (index, loop, state) =>
+                        Parallel.For(0, ns, (index) =>
                         {
-                            var rnd = state.Item1;
-                            float u = ((float)i + rnd.NextFloat()) / (float)nx;
-                            float v = ((float)j + rnd.NextFloat()) / (float)ny;
-                            var r = cam.GetRay(u, v, rnd);
-                            state.Item2 += Color(r, world, 0, rnd);
-                            return state;
-                        }, (state) => {
-                            lock(lockobj)
-                            {
-                                col += state.Item2;
-                            }
+                            float u = ((float)i + rnd[index].NextFloat()) / (float)nx;
+                            float v = ((float)j + rnd[index].NextFloat()) / (float)ny;
+                            var r = cam.GetRay(u, v, rnd[index]);
+                            var indCol = Color(r, world, 0, rnd[index]);
+                           
                         });
 
                         col /= (float)ns;
