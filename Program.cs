@@ -40,7 +40,7 @@ namespace raytracinginoneweekend
             var x = new Vector3(0, 0, 0);
             int nx = 800;
             int ny = 400;
-            int ns = 1;
+            int ns = 10;
             
             var world = new List<IHitable>();
 /*       
@@ -61,37 +61,33 @@ namespace raytracinginoneweekend
 
             var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus);
 
-            ImSoRandom[] rnd = new ImSoRandom[ns];
-            for (var index = 0; index < ns; index++) {
-                rnd[index] = new SunsetquestRandom();
-            }
-            var lockobj = new object();
-
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
-                for (int j = 0; j < ny; j++)
+                Parallel.For(0, ny, () => new SunsetquestRandom(), (index, loop, rnd) =>
                 {
-                    var rowSpan = image.GetPixelRowSpan(j);
+                    var j = ny - 1 - index;
+                    var rowSpan = image.GetPixelRowSpan((int)index);
 
                     for (int i = 0; i < nx; i++)
                     {
                         var col = new Vector3(0);
 
-                        Parallel.For(0, ns, (index) =>
+                        for (var s = 0; s < ns; s++)
                         {
-                            float u = ((float)i + rnd[index].NextFloat()) / (float)nx;
-                            float v = ((float)j + rnd[index].NextFloat()) / (float)ny;
-                            var r = cam.GetRay(u, v, rnd[index]);
-                            var indCol = Color(r, world, 0, rnd[index]);
-                           
-                        });
+                            float u = ((float)i + rnd.NextFloat()) / (float)nx;
+                            float v = ((float)j + rnd.NextFloat()) / (float)ny;
+                            var r = cam.GetRay(u, v, rnd);
+                            col += Color(r, world, 0, rnd);
+
+                        }
 
                         col /= (float)ns;
                         col = new Vector3((float)Math.Sqrt(col.X), (float)Math.Sqrt(col.Y), (float)Math.Sqrt(col.Z));
 
                         rowSpan[i] = new Rgba32(col);
                     }
-                }
+                    return rnd;
+                }, (rnd) => { });
                 image.Save("test.png");
                 var duration = DateTime.Now - startTime;
                 Console.WriteLine($"Duration: {duration}");
