@@ -12,18 +12,16 @@ namespace raytracinginoneweekend
 
     class Program
     {
-        public static ImSoRandom Rnd;
 
-
-        static Vector3 Color(Ray r, IList<IHitable> world, int depth) {
+        static Vector3 Color(Ray r, IList<IHitable> world, int depth, ImSoRandom rnd) {
             var rec = new HitRecord();
             if (world.Hit(r, 0.001f, float.MaxValue, ref rec))
             {
                 Ray scattered;
                 Vector3 attenuation;
-                if (depth < 50 && rec.Material.Scatter(r, rec, out attenuation, out scattered))
+                if (depth < 50 && rec.Material.Scatter(r, rec, out attenuation, out scattered, rnd))
                 {
-                    return attenuation * Color(scattered, world, depth + 1);
+                    return attenuation * Color(scattered, world, depth + 1, rnd);
                 }
                 else
                 {
@@ -39,12 +37,10 @@ namespace raytracinginoneweekend
         {
             var startTime = DateTime.Now;
 
-            Rnd = new SunsetquestRandom();
-
             var x = new Vector3(0, 0, 0);
             int nx = 800;
             int ny = 400;
-            int ns = 10;
+            int ns = 1;
             
             var world = new List<IHitable>();
 /*       
@@ -67,27 +63,36 @@ namespace raytracinginoneweekend
             
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
-                Parallel.For(0, ny, index => {
-                    var j = ny - 1 - index;
-                    var rowSpan = image.GetPixelRowSpan(index);
+                for (int j = 0; j < ny; j++)
+                {
+                    var rowSpan = image.GetPixelRowSpan(j);
 
                     for (int i = 0; i < nx; i++)
                     {
                         var col = new Vector3(0);
+                        var lockobj = new object();
 
-                        for(var s = 0;  s < ns; s++)
+                        Parallel.For(0, ns, () => (new SunsetquestRandom(), new Vector3(0)), (index, loop, state) =>
                         {
-                            float u = ((float)i + Rnd.NextFloat()) / (float)nx;
-                            float v = ((float)j + Rnd.NextFloat()) / (float)ny;
-                            var r = cam.GetRay(u, v);
-                            col += Color(r, world, 0);
-                        }
+                            var rnd = state.Item1;
+                            float u = ((float)i + rnd.NextFloat()) / (float)nx;
+                            float v = ((float)j + rnd.NextFloat()) / (float)ny;
+                            var r = cam.GetRay(u, v, rnd);
+                            state.Item2 += Color(r, world, 0, rnd);
+                            return state;
+                        }, (state) => {
+                            lock(lockobj)
+                            {
+                                col += state.Item2;
+                            }
+                        });
+
                         col /= (float)ns;
                         col = new Vector3((float)Math.Sqrt(col.X), (float)Math.Sqrt(col.Y), (float)Math.Sqrt(col.Z));
 
                         rowSpan[i] = new Rgba32(col);
                     }
-                });
+                }
                 image.Save("test.png");
                 var duration = DateTime.Now - startTime;
                 Console.WriteLine($"Duration: {duration}");
@@ -95,25 +100,6 @@ namespace raytracinginoneweekend
             }
         }
 
-        public static Vector3 RandomInUnitSphere()
-        {
-            var p = new Vector3();
-            do
-            {
-                p = 2.0f * new Vector3(Program.Rnd.NextFloat(), Program.Rnd.NextFloat(), Program.Rnd.NextFloat()) - new Vector3(1, 1, 1);
-            } while (p.LengthSquared() >= 1.0f);
-            return p;
-        }
-
-        public static Vector3 RandomInUnitDisk()
-        {
-            var p = new Vector3();
-            do
-            {
-                p = 2.0f * new Vector3(Program.Rnd.NextFloat(), Program.Rnd.NextFloat(), 0) - new Vector3(1, 1, 0);
-            } while (Vector3.Dot(p,p) >= 1.0f);
-            return p;
-        }
 
         public static Vector3 Reflect(Vector3 v, Vector3 n)
         {

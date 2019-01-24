@@ -7,6 +7,6 @@ namespace raytracinginoneweekend.Materials
 {
     public interface IMaterial
     {
-        bool Scatter(Ray rayIn, HitRecord hitRecord, out Vector3 attenuation, out Ray scattererd);
+        bool Scatter(Ray rayIn, HitRecord hitRecord, out Vector3 attenuation, out Ray scattererd, ImSoRandom rnd);
     }
 }

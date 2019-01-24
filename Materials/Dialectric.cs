@@ -14,7 +14,7 @@ namespace raytracinginoneweekend.Materials
             _refIndex = ri;
         }
 
-        public bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd)
+        public bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd, ImSoRandom random)
         {
             Vector3 reflected = Program.Reflect(rayIn.Direction, rec.Normal);
             attenuation = new Vector3(1.0f);
@@ -44,7 +44,7 @@ namespace raytracinginoneweekend.Materials
                 reflectProb = 1.0f;
             }
 
-            if(Program.Rnd.NextFloat() < reflectProb)
+            if(random.NextFloat() < reflectProb)
             {
                 scattererd = new Ray(rec.P, reflected);
             } else

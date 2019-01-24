@@ -22,9 +22,9 @@ namespace raytracinginoneweekend
             Vertical = 2 * halfHeight * focusDist * V;
         }
 
-        public Ray GetRay(float u, float v)
+        public Ray GetRay(float u, float v, ImSoRandom rnd)
         {
-            var rd = LensRadius * Program.RandomInUnitDisk();
+            var rd = LensRadius * rnd.RandomInUnitDisk();
             var offset = U * rd.X + V * rd.Y;
             return new Ray(Origin+offset, LowerLeftCorner + u * Horizontal + v * Vertical - Origin - offset);
         }

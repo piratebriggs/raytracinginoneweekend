@@ -16,10 +16,10 @@ namespace raytracinginoneweekend.Materials
             _fuzz = (f < 1) ? f : 1;
         }
 
-        public bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd)
+        public bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd, ImSoRandom rnd)
         {
             Vector3 reflected = Program.Reflect(Vector3.Normalize(rayIn.Direction), rec.Normal);
-            scattererd = new Ray(rec.P, reflected + _fuzz * Program.RandomInUnitSphere());
+            scattererd = new Ray(rec.P, reflected + _fuzz * rnd.RandomInUnitSphere());
             attenuation = _albedo;
             return (Vector3.Dot(scattererd.Direction,rec.Normal) > 0);
 

@@ -10,14 +10,11 @@ namespace raytracinginoneweekend
     /// </summary>
     public class SunsetquestRandom : ImSoRandom
     {
-        private static Random _provider = new Random();
+        private Random _provider = new Random();
 
         public float NextFloat()
         {
-            lock (_provider)
-            {
-                return (float)_provider.Next() / ((float)int.MaxValue + 1.0f);
-            }
+            return (float)_provider.Next() / ((float)int.MaxValue + 1.0f);
         }
     }
 }

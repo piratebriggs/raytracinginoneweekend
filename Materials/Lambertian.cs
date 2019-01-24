@@ -14,9 +14,9 @@ namespace raytracinginoneweekend.Materials
             _albedo = a;
         }
 
-        public bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd)
+        public bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd, ImSoRandom rnd)
         {
-            Vector3 target = rec.P + rec.Normal + Program.RandomInUnitSphere();
+            Vector3 target = rec.P + rec.Normal + rnd.RandomInUnitSphere();
             scattererd = new Ray(rec.P, target - rec.P);
             attenuation = _albedo;
             return true;
