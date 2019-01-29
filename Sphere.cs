@@ -32,24 +32,25 @@ namespace raytracinginoneweekend
                 var temp = (-b - (float)Math.Sqrt(discriminant)) / a;
                 if (temp < tMax && temp > tMin)
                 {
-                    GetHitRec(ref rec, r, temp);
+                    GetHitRec(r, temp, ref rec);
                     return true;
                 }
                 temp = (-b + (float)Math.Sqrt(discriminant)) / a;
                 if (temp < tMax && temp > tMin)
                 {
-                    GetHitRec(ref rec, r, temp);
+                    GetHitRec(r, temp, ref rec);
                     return true;
                 }
             }
             return false;
         }
 
-        private void GetHitRec(ref HitRecord rec, Ray r,float temp)
+        private void GetHitRec(Ray r, float temp, ref HitRecord rec)
         {
+            var p = r.PointAtParameter(temp);
             rec.T = temp;
-            rec.P = r.PointAtParameter(rec.T);
-            rec.Normal = (rec.P - Center) / Radius;
+            rec.P = p;
+            rec.Normal = (p - Center) / Radius;
             rec.Material = Material;
         }
     }

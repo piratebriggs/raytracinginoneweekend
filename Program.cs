@@ -13,7 +13,7 @@ namespace raytracinginoneweekend
     class Program
     {
 
-        static Vector3 Color(Ray r, IList<IHitable> world, int depth, ImSoRandom rnd) {
+        static Vector3 Color(Ray r, IHitable[] world, int depth, ImSoRandom rnd) {
             var rec = new HitRecord();
             if (world.Hit(r, 0.001f, float.MaxValue, ref rec))
             {
@@ -33,12 +33,11 @@ namespace raytracinginoneweekend
             return (1.0f - t) * new Vector3(1.0f, 1.0f, 1.0f) + t * new Vector3(0.5f, 0.7f, 1.0f);
         }
 
-        private static IList<IHitable> RandomScene(ImSoRandom rnd)
+        private static List<IHitable> RandomScene(ImSoRandom rnd)
         {
             var world = new List<IHitable>();
             world.Add(new Sphere(new Vector3(0, -1000f, 0), 1000, new Lambertian(new Vector3(0.5f, 0.5f, 0.5f))));
 
-            int i = 1;
             for (int a = -11; a < 11; a++)
             {
                 for (int b = -11; b < 11; b++)
@@ -81,6 +80,7 @@ namespace raytracinginoneweekend
             int ns = 10;
 
             var world = RandomScene(new SunsetquestRandom());
+            var wl = world.ToArray();
 
             var lookFrom = new Vector3(13, 2, 3);
             var lookAt = new Vector3(0, 0, 0);
@@ -105,7 +105,7 @@ namespace raytracinginoneweekend
                             float u = ((float)i + rnd.NextFloat()) / (float)nx;
                             float v = ((float)j + rnd.NextFloat()) / (float)ny;
                             var r = cam.GetRay(u, v, rnd);
-                            col += Color(r, world, 0, rnd);
+                            col += Color(r, wl, 0, rnd);
 
                         }
 
