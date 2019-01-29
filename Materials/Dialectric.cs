@@ -16,7 +16,7 @@ namespace raytracinginoneweekend.Materials
 
         public bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd, ImSoRandom random)
         {
-            Vector3 reflected = Program.Reflect(rayIn.Direction, rec.Normal);
+            Vector3 reflected = Vector3.Reflect(rayIn.Direction, rec.Normal);
             attenuation = new Vector3(1.0f);
 
             Vector3 outward_normal;

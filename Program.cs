@@ -33,6 +33,44 @@ namespace raytracinginoneweekend
             return (1.0f - t) * new Vector3(1.0f, 1.0f, 1.0f) + t * new Vector3(0.5f, 0.7f, 1.0f);
         }
 
+        private static IList<IHitable> RandomScene(ImSoRandom rnd)
+        {
+            var world = new List<IHitable>();
+            world.Add(new Sphere(new Vector3(0, -1000f, 0), 1000, new Lambertian(new Vector3(0.5f, 0.5f, 0.5f))));
+
+            int i = 1;
+            for (int a = -11; a < 11; a++)
+            {
+                for (int b = -11; b < 11; b++)
+                {
+                    float choose_mat = rnd.NextFloat();
+                    var center = new Vector3(a + 0.9f * rnd.NextFloat(), 0.2f, b + 0.9f * rnd.NextFloat());
+                    if ((center - new Vector3(4, 0.2f, 0)).Length() > 0.9)
+                    {
+                        if (choose_mat < 0.8)
+                        {  // diffuse
+                            world.Add(new Sphere(center, 0.2f, new Lambertian(new Vector3(rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat()))));
+                        }
+                        else if (choose_mat < 0.95)
+                        { // metal
+                            world.Add(new Sphere(center, 0.2f,
+                            new Metal(new Vector3(0.5f * (1 + rnd.NextFloat()), 0.5f * (1 + rnd.NextFloat()), 0.5f * (1 + rnd.NextFloat())), 0.5f * rnd.NextFloat())));
+                        }
+                        else
+                        {  // glass
+                            world.Add(new Sphere(center, 0.2f, new Dialectric(1.5f)));
+                        }
+                    }
+                }
+            }
+
+            world.Add(new Sphere(new Vector3(0, 1, 0), 1.0f, new Dialectric(1.5f)));
+            world.Add(new Sphere(new Vector3(-4, 1, 0), 1.0f, new Lambertian(new Vector3(0.4f, 0.2f, 0.1f))));
+            world.Add(new Sphere(new Vector3(4, 1, 0), 1.0f, new Metal(new Vector3(0.7f, 0.6f, 0.5f), 0f)));
+
+            return world;
+        }
+
         static void Main(string[] args)
         {
             var startTime = DateTime.Now;
@@ -40,24 +78,14 @@ namespace raytracinginoneweekend
             var x = new Vector3(0, 0, 0);
             int nx = 800;
             int ny = 400;
-            int ns = 10;
-            
-            var world = new List<IHitable>();
-/*       
-            var R = (float)Math.Cos(Math.PI / 4);
-            world.Add(new Sphere(new Vector3(-R, 0, -1), R, new Lambertian(new Vector3(0f, 0f, 1f))));
-            world.Add(new Sphere(new Vector3(R, 0, -1), R, new Lambertian(new Vector3(1f, 0f, 0f))));
-*/
-            world.Add(new Sphere(new Vector3(0, 0, -1), 0.5f, new Lambertian(new Vector3(0.8f, 0.3f, 0.3f))));
-            world.Add(new Sphere(new Vector3(0, -100.5f, -1), 100, new Lambertian(new Vector3(0.8f, 0.8f, 0.0f))));
-            world.Add(new Sphere(new Vector3(1, 0, -1), 0.5f, new Metal(new Vector3(0.8f, 0.6f, 0.2f), 0f)));
-            world.Add(new Sphere(new Vector3(-1, 0, -1), 0.5f, new Dialectric(1.5f)));
-            world.Add(new Sphere(new Vector3(-1, 0, -1), -0.45f, new Dialectric(1.5f)));
+            int ns = 100;
 
-            var lookFrom = new Vector3(3, 3, 2);
-            var lookAt = new Vector3(0, 0, -1);
+            var world = RandomScene(new SunsetquestRandom());
+
+            var lookFrom = new Vector3(13, 2, 3);
+            var lookAt = new Vector3(0, 0, 0);
             var distToFocus = (lookFrom - lookAt ).Length();
-            var aperture = 2f;
+            var aperture = 0.1f;
 
             var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus);
 
@@ -91,15 +119,7 @@ namespace raytracinginoneweekend
                 image.Save("test.png");
                 var duration = DateTime.Now - startTime;
                 Console.WriteLine($"Duration: {duration}");
-                Console.ReadLine();
             }
         }
-
-
-        public static Vector3 Reflect(Vector3 v, Vector3 n)
-        {
-            return v - 2 * Vector3.Dot(v, n) * n;
-        }
-
     }
 }

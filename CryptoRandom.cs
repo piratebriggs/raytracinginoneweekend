@@ -20,6 +20,5 @@ namespace raytracinginoneweekend
             var randUint = BitConverter.ToUInt32(data, 0);
             return randUint / (uint.MaxValue + 1.0f);
         }
-
     }
 }
