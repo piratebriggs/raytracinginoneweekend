@@ -76,22 +76,22 @@ namespace raytracinginoneweekend
             var startTime = DateTime.Now;
 
             var x = new Vector3(0, 0, 0);
-            int nx = 800;
+            int nx = 600;
             int ny = 400;
-            int ns = 100;
+            int ns = 10;
 
             var world = RandomScene(new SunsetquestRandom());
 
             var lookFrom = new Vector3(13, 2, 3);
             var lookAt = new Vector3(0, 0, 0);
-            var distToFocus = (lookFrom - lookAt ).Length();
+            var distToFocus = 10;
             var aperture = 0.1f;
 
             var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus);
-
+            var rnd = new SunsetquestRandom();
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
-                Parallel.For(0, ny, () => new SunsetquestRandom(), (index, loop, rnd) =>
+                for(var index = 0; index < ny; index++)
                 {
                     var j = ny - 1 - index;
                     var rowSpan = image.GetPixelRowSpan((int)index);
@@ -114,8 +114,8 @@ namespace raytracinginoneweekend
 
                         rowSpan[i] = new Rgba32(col);
                     }
-                    return rnd;
-                }, (rnd) => { });
+                   
+                }
                 image.Save("test.png");
                 var duration = DateTime.Now - startTime;
                 Console.WriteLine($"Duration: {duration}");
