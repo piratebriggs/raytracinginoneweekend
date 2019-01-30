@@ -9,8 +9,8 @@ namespace raytracinginoneweekend
     public struct HitRecord
     {
         public float T { get; set; }
-        public Vector3 P { get; set; }
-        public Vector3 Normal { get; set; }
+        public Vector4 P { get; set; }
+        public Vector4 Normal { get; set; }
         public IMaterial Material { get; set; }
     }
 

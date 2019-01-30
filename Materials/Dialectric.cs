@@ -14,27 +14,27 @@ namespace raytracinginoneweekend.Materials
             _refIndex = ri;
         }
 
-        public bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd, ImSoRandom random)
+        public bool Scatter(Ray rayIn, HitRecord rec, out Vector4 attenuation, out Ray scattererd, ImSoRandom random)
         {
-            Vector3 reflected = Vector3.Reflect(rayIn.Direction, rec.Normal);
-            attenuation = new Vector3(1.0f);
+            Vector4 reflected = rayIn.Direction.Reflect( rec.Normal);
+            attenuation = VectorExtensions.Vec(1,1,1);
 
-            Vector3 outward_normal;
+            Vector4 outward_normal;
             float niOverNt;
             float cosine;
-            if(Vector3.Dot(rayIn.Direction,rec.Normal)>0)
+            if(Vector4.Dot(rayIn.Direction,rec.Normal)>0)
             {
                 outward_normal = -rec.Normal;
                 niOverNt = _refIndex;
-                cosine = _refIndex * Vector3.Dot(rayIn.Direction, rec.Normal) / rayIn.Direction.Length();
+                cosine = _refIndex * Vector4.Dot(rayIn.Direction, rec.Normal) / rayIn.Direction.Length();
             }else
             {
                 outward_normal = rec.Normal;
                 niOverNt = 1.0f / _refIndex;
-                cosine = -Vector3.Dot(rayIn.Direction, rec.Normal) / rayIn.Direction.Length();
+                cosine = -Vector4.Dot(rayIn.Direction, rec.Normal) / rayIn.Direction.Length();
             }
 
-            Vector3 refracted;
+            Vector4 refracted;
             float reflectProb;
             if (Refract(rayIn.Direction,outward_normal,niOverNt,out refracted))
             {
@@ -61,10 +61,10 @@ namespace raytracinginoneweekend.Materials
             return r0 + (1f - r0) * (float)Math.Pow((1f - cosine), 5f);
         }
 
-        bool Refract(Vector3 v, Vector3 n, float niOverNt , out Vector3 refracted)
+        bool Refract(Vector4 v, Vector4 n, float niOverNt , out Vector4 refracted)
         {
-            var uv = Vector3.Normalize(v);
-            var dot = Vector3.Dot(uv, n);
+            var uv = Vector4.Normalize(v);
+            var dot = Vector4.Dot(uv, n);
             float discriminant = 1.0f - niOverNt * niOverNt * (1f - dot * dot);
             if (discriminant > 0)
             {
@@ -73,7 +73,7 @@ namespace raytracinginoneweekend.Materials
             }
             else
             {
-                refracted = new Vector3(0);
+                refracted = VectorExtensions.Vec(0,0,0);
                 return false;
             }
         }
