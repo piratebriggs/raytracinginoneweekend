@@ -70,22 +70,51 @@ namespace raytracinginoneweekend
             return world;
         }
 
+        private static List<IHitable> PoolScene(ImSoRandom rnd)
+        {
+            var world = new List<IHitable>();
+            world.Add(new Sphere(new Vector3(0, -1000f, 0), 1000, new Lambertian(new Vector3(0.33f, 0.67f, 0.0f))));
+            var red = new Vector3(0.68f, 0.13f, 0.16f);
+            var yellow = new Vector3(1f, 0.74f, 0.13f);
+            var black = new Vector3(0.14f, 0.07f, 0.07f);
+            var white = new Vector3(1f, 1f, 0.9f);
+
+            for (var a = 1f; a <= 5; a+=1f)
+            {
+                var counter = 0-a;
+                for (var b = 0f; b < a; b += 1f)
+                {
+                    var center = new Vector3(a*0.9f - 5f , 0.5f,  a/2f - b - 0.5f );
+                    var colour = a == 3 && b == 1 ? black : counter % 2 == 0 ? red : yellow;
+                    world.Add(new Sphere(center, 0.5f,
+                        new Metal(colour, 0.1f)));
+                    counter++;
+                }
+            }
+
+            world.Add(new Sphere(new Vector3(-6,0.5f,0), 0.5f,
+                new Metal(white, 0.1f)));
+
+            return world;
+        }
+
+
         static void Main(string[] args)
         {
             var startTime = DateTime.Now;
 
             var x = new Vector3(0, 0, 0);
-            int nx = 800;
+            int nx = 600;
             int ny = 400;
-            int ns = 100;
+            int ns = 30;
 
-            var world = RandomScene(new SunsetquestRandom());
+            var world = PoolScene(new SunsetquestRandom());
             var wl = world.ToArray();
 
-            var lookFrom = new Vector3(13, 2, 3);
-            var lookAt = new Vector3(0, 0, 0);
-            var distToFocus = (lookFrom - lookAt ).Length();
-            var aperture = 0.1f;
+            var lookFrom = new Vector3(-8, 3.5f, 10);
+            var lookAt = new Vector3(-3, 0, 0);
+            var distToFocus = (lookFrom - new Vector3(-6, 0.5f, 0)).Length();
+            var aperture = 0.5f;
 
             var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus);
 
@@ -116,8 +145,8 @@ namespace raytracinginoneweekend
                     }
                     return rnd;
                 }, (rnd) => { });
-                image.Save("test.png");
                 var duration = DateTime.Now - startTime;
+                image.Save("test.png");
                 Console.WriteLine($"Duration: {duration}");
             }
         }
