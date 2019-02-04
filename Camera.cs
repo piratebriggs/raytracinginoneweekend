@@ -7,8 +7,11 @@ namespace raytracinginoneweekend
 {
     public class Camera
     {
-        public Camera(Vector3 lookfrom, Vector3 lookat, Vector3 vup,  float vfov, float aspect, float aperture, float focusDist)
+        public Camera(Vector3 lookfrom, Vector3 lookat, Vector3 vup,  float vfov, float aspect, float aperture, float focusDist, float t0, float t1)
         {
+            Time0 = t0;
+            Time1 = t1;
+
             LensRadius = aperture / 2f;
             var theta = vfov * Math.PI / 180;
             var halfHeight = (float)Math.Tan(theta / 2);
@@ -26,7 +29,8 @@ namespace raytracinginoneweekend
         {
             var rd = LensRadius * rnd.RandomInUnitDisk();
             var offset = U * rd.X + V * rd.Y;
-            return new Ray(Origin+offset, LowerLeftCorner + u * Horizontal + v * Vertical - Origin - offset);
+            float time = Time0 + rnd.NextFloat() * (Time1 - Time0);
+            return new Ray(Origin+offset, LowerLeftCorner + u * Horizontal + v * Vertical - Origin - offset, time);
         }
 
         Vector3 Origin { get; set; }
@@ -36,6 +40,7 @@ namespace raytracinginoneweekend
         Vector3 U { get; set; }
         Vector3 V { get; set; }
         Vector3 W { get; set; }
+        float Time0, Time1;
         float LensRadius { get; set; }
     }
 }

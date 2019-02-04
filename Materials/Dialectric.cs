@@ -46,10 +46,10 @@ namespace raytracinginoneweekend.Materials
 
             if(random.NextFloat() < reflectProb)
             {
-                scattererd = new Ray(rec.P, reflected);
+                scattererd = new Ray(rec.P, reflected, rayIn.Time);
             } else
             {
-                scattererd = new Ray(rec.P, refracted);
+                scattererd = new Ray(rec.P, refracted, rayIn.Time);
             }
             return true;
         }

@@ -48,7 +48,7 @@ namespace raytracinginoneweekend
                     {
                         if (choose_mat < 0.8)
                         {  // diffuse
-                            world.Add(new Sphere(center, 0.2f, new Lambertian(new Vector3(rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat()))));
+                            world.Add(new MovingSphere(center, center + new Vector3(0, 0.5f * rnd.NextFloat(), 0), 0.0f, 1.0f, 0.2f, new Lambertian(new Vector3(rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat()))));
                         }
                         else if (choose_mat < 0.95)
                         { // metal
@@ -85,14 +85,24 @@ namespace raytracinginoneweekend
                 for (var b = 0f; b < a; b += 1f)
                 {
                     var center = new Vector3(a*0.9f - 5f , 0.5f,  a/2f - b - 0.5f );
-                    var colour = a == 3 && b == 1 ? black : counter % 2 == 0 ? red : yellow;
+                    var colour = counter % 2 == 0 ? red : yellow;
+                    if(a == 3 && b == 1 )
+                    {
+                        colour = black;
+                    } if(a == 3 && b == 2) {
+                        colour = red;
+                    } if (a == 5 && b == 4)
+                    {
+                        colour = red;
+                    }
                     world.Add(new Sphere(center, 0.5f,
-                        new Metal(colour, 0.1f)));
+                        new Metal(colour, 0.5f)));
                     counter++;
                 }
             }
 
-            world.Add(new Sphere(new Vector3(-6,0.5f,0), 0.5f,
+            var cueCenter = new Vector3(-6, 0.5f, 0);
+            world.Add(new MovingSphere(cueCenter, cueCenter + new Vector3(0.75f * rnd.NextFloat(), 0, 0), 0.0f, 1.0f, 0.5f,
                 new Metal(white, 0.1f)));
 
             return world;
@@ -106,17 +116,17 @@ namespace raytracinginoneweekend
             var x = new Vector3(0, 0, 0);
             int nx = 600;
             int ny = 400;
-            int ns = 30;
+            int ns = 100;
 
             var world = PoolScene(new SunsetquestRandom());
             var wl = world.ToArray();
 
-            var lookFrom = new Vector3(-8, 3.5f, 10);
+            var lookFrom = new Vector3(-9, 3.5f, 12);
             var lookAt = new Vector3(-3, 0, 0);
             var distToFocus = (lookFrom - new Vector3(-6, 0.5f, 0)).Length();
             var aperture = 0.5f;
 
-            var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus);
+            var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus, 0.0f, 1.0f);
 
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {

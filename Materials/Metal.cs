@@ -19,7 +19,7 @@ namespace raytracinginoneweekend.Materials
         public bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd, ImSoRandom rnd)
         {
             Vector3 reflected = Vector3.Reflect(Vector3.Normalize(rayIn.Direction), rec.Normal);
-            scattererd = new Ray(rec.P, reflected + _fuzz * rnd.RandomInUnitSphere());
+            scattererd = new Ray(rec.P, reflected + _fuzz * rnd.RandomInUnitSphere(), rayIn.Time);
             attenuation = _albedo;
             return (Vector3.Dot(scattererd.Direction,rec.Normal) > 0);
 
