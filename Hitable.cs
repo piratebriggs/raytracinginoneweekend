@@ -8,10 +8,10 @@ namespace raytracinginoneweekend
 {
     public struct HitRecord
     {
-        public float T { get; set; }
-        public Vector3 P { get; set; }
-        public Vector3 Normal { get; set; }
-        public IMaterial Material { get; set; }
+        public float T;
+        public Vector3 P;
+        public Vector3 Normal;
+        public IMaterial Material;
     }
 
     public interface IHitable

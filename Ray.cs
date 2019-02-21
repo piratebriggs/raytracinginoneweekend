@@ -9,13 +9,11 @@ namespace raytracinginoneweekend
     {
         public Ray(Vector3 origin, Vector3 direction, float time)
         {
-            A = origin; B = direction; Time = time;
+            Origin = origin; Direction = direction; Time = time;
         }
-        public Vector3 A { get; set; }
-        public Vector3 B { get; set; }
-        public Vector3 Origin { get { return A; } }
-        public Vector3 Direction { get { return B; } }
+        public Vector3 Origin;
+        public Vector3 Direction;
         public float Time;
-        public Vector3 PointAtParameter(float t) { return A + t * B; }
+        public Vector3 PointAtParameter(float t) { return Origin + t * Direction; }
     }
 }

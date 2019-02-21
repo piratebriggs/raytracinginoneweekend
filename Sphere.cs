@@ -16,9 +16,9 @@ namespace raytracinginoneweekend
             Material = material;
         }
 
-        public float Radius { get; set; }
-        public Vector3 Center { get; set; }
-        public IMaterial Material { get; set; }
+        public float Radius;
+        public Vector3 Center;
+        public IMaterial Material;
 
         public bool Hit(Ray r, float tMin, float tMax, ref HitRecord rec)
         {

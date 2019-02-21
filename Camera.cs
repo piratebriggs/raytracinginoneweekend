@@ -33,14 +33,14 @@ namespace raytracinginoneweekend
             return new Ray(Origin+offset, LowerLeftCorner + u * Horizontal + v * Vertical - Origin - offset, time);
         }
 
-        Vector3 Origin { get; set; }
-        Vector3 LowerLeftCorner { get; set; }
-        Vector3 Horizontal { get; set; }
-        Vector3 Vertical { get; set; }
-        Vector3 U { get; set; }
-        Vector3 V { get; set; }
-        Vector3 W { get; set; }
+        Vector3 Origin;
+        Vector3 LowerLeftCorner;
+        Vector3 Horizontal;
+        Vector3 Vertical;
+        Vector3 U;
+        Vector3 V;
+        Vector3 W;
         float Time0, Time1;
-        float LensRadius { get; set; }
+        float LensRadius;
     }
 }
