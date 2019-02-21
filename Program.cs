@@ -4,6 +4,7 @@ using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Numerics;
 using System.Threading.Tasks;
 
@@ -12,8 +13,10 @@ namespace raytracinginoneweekend
 
     class Program
     {
+        public static Stopwatch sw = new Stopwatch();
 
-        static Vector3 Color(Ray r, IHitable[] world, int depth, ImSoRandom rnd) {
+        static Vector3 Color(Ray r, IHitable[] world, int depth, ImSoRandom rnd, ref uint rayCount) {
+            rayCount++;
             var rec = new HitRecord();
             if (world.Hit(r, 0.001f, float.MaxValue, ref rec))
             {
@@ -21,7 +24,7 @@ namespace raytracinginoneweekend
                 Vector3 attenuation;
                 if (depth < 50 && rec.Material.Scatter(r, rec, out attenuation, out scattered, rnd))
                 {
-                    return attenuation * Color(scattered, world, depth + 1, rnd);
+                    return attenuation * Color(scattered, world, depth + 1, rnd, ref rayCount);
                 }
                 else
                 {
@@ -111,8 +114,6 @@ namespace raytracinginoneweekend
 
         static void Main(string[] args)
         {
-            var startTime = DateTime.Now;
-
             var x = new Vector3(0, 0, 0);
             int nx = 600;
             int ny = 400;
@@ -128,8 +129,11 @@ namespace raytracinginoneweekend
 
             var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus, 0.0f, 1.0f);
 
+            uint totalRayCount = 0;
+
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
+                sw.Start();
                 Parallel.For(0, ny, () => new SunsetquestRandom(), (index, loop, rnd) =>
                 {
                     var j = ny - 1 - index;
@@ -144,7 +148,7 @@ namespace raytracinginoneweekend
                             float u = ((float)i + rnd.NextFloat()) / (float)nx;
                             float v = ((float)j + rnd.NextFloat()) / (float)ny;
                             var r = cam.GetRay(u, v, rnd);
-                            col += Color(r, wl, 0, rnd);
+                            col += Color(r, wl, 0, rnd, ref totalRayCount);
 
                         }
 
@@ -155,10 +159,15 @@ namespace raytracinginoneweekend
                     }
                     return rnd;
                 }, (rnd) => { });
-                var duration = DateTime.Now - startTime;
+                sw.Stop();
                 image.Save("test.png");
-                Console.WriteLine($"Duration: {duration}");
             }
+            float seconds = sw.ElapsedMilliseconds / 1000f;
+            float rate = totalRayCount / seconds;
+            float mRate = rate / 1_000_000;
+
+            Console.WriteLine($"totalRayCount: {totalRayCount}");
+            Console.WriteLine($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
         }
     }
 }
