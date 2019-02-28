@@ -132,7 +132,8 @@ namespace raytracinginoneweekend
             var x = new Vector3(0, 0, 0);
             int nx = 600;
             int ny = 400;
-            int ns = 100;
+            int ns = 10;
+            var singleThread = false;
 
             var (world, cam) = RandomScene(new SunsetquestRandom(), nx, ny);
             var wl = world.ToArray();
@@ -141,31 +142,22 @@ namespace raytracinginoneweekend
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
                 sw.Start();
-                Parallel.For(0, ny, () => new SunsetquestRandom(), (index, loop, rnd) =>
+                if(singleThread)
                 {
-                    var j = ny - 1 - index;
-                    var rowSpan = image.GetPixelRowSpan((int)index);
-
-                    for (int i = 0; i < nx; i++)
+                    var rnd = new SunsetquestRandom();
+                    for (int j = 0; j < ny; j++)
                     {
-                        var col = new Vector3(0);
-
-                        for (var s = 0; s < ns; s++)
-                        {
-                            float u = ((float)i + rnd.NextFloat()) / (float)nx;
-                            float v = ((float)j + rnd.NextFloat()) / (float)ny;
-                            var r = cam.GetRay(u, v, rnd);
-                            col += Color(r, wl, 0, rnd, ref totalRayCount);
-
-                        }
-
-                        col /= (float)ns;
-                        col = new Vector3((float)Math.Sqrt(col.X), (float)Math.Sqrt(col.Y), (float)Math.Sqrt(col.Z));
-
-                        rowSpan[i] = new Rgba32(col);
+                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, ref totalRayCount);
                     }
-                    return rnd;
-                }, (rnd) => { });
+                }
+                else
+                {
+                    Parallel.For(0, ny, () => new SunsetquestRandom(), (j, loop, rnd) =>
+                    {
+                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, ref totalRayCount);
+                        return rnd;
+                    }, (rnd) => { });
+                }
                 sw.Stop();
                 image.Save("test.png");
             }
@@ -175,6 +167,33 @@ namespace raytracinginoneweekend
 
             Console.WriteLine($"totalRayCount: {totalRayCount}");
             Console.WriteLine($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void RenderRow(Image<Rgba32> image, IHitable[] wl, Camera cam, int j, int nx, int ny, int ns, ImSoRandom rnd, ref uint rayCount)
+        {
+            var index = ny - 1 - j;
+            var rowSpan = image.GetPixelRowSpan(index);
+
+            for (int i = 0; i < nx; i++)
+            {
+                var col = new Vector3(0);
+
+                for (var s = 0; s < ns; s++)
+                {
+                    float u = ((float)i + rnd.NextFloat()) / (float)nx;
+                    float v = ((float)j + rnd.NextFloat()) / (float)ny;
+                    var r = cam.GetRay(u, v, rnd);
+                    col += Color(r, wl, 0, rnd, ref rayCount);
+
+                }
+
+                col /= (float)ns;
+                col = new Vector3((float)Math.Sqrt(col.X), (float)Math.Sqrt(col.Y), (float)Math.Sqrt(col.Z));
+
+                rowSpan[i] = new Rgba32(col);
+            }
+
         }
     }
 }
