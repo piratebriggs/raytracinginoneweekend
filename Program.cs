@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace raytracinginoneweekend
@@ -36,7 +37,7 @@ namespace raytracinginoneweekend
             return (1.0f - t) * new Vector3(1.0f, 1.0f, 1.0f) + t * new Vector3(0.5f, 0.7f, 1.0f);
         }
 
-        private static List<IHitable> RandomScene(ImSoRandom rnd)
+        private static (List<IHitable>, Camera) RandomScene(ImSoRandom rnd, int nx, int ny)
         {
             var world = new List<IHitable>();
             world.Add(new Sphere(new Vector3(0, -1000f, 0), 1000, new Lambertian(new Vector3(0.5f, 0.5f, 0.5f))));
@@ -70,10 +71,17 @@ namespace raytracinginoneweekend
             world.Add(new Sphere(new Vector3(-4, 1, 0), 1.0f, new Lambertian(new Vector3(0.4f, 0.2f, 0.1f))));
             world.Add(new Sphere(new Vector3(4, 1, 0), 1.0f, new Metal(new Vector3(0.7f, 0.6f, 0.5f), 0f)));
 
-            return world;
+            var lookFrom = new Vector3(13, 2, 3);
+            var lookAt = new Vector3(0, 0, 0);
+            var distToFocus = 10;
+            var aperture = 0.1f;
+
+            var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus, 0.0f, 1.0f);
+
+            return (world, cam);
         }
 
-        private static List<IHitable> PoolScene(ImSoRandom rnd)
+        private static (List<IHitable>, Camera) PoolScene(ImSoRandom rnd, int nx, int ny)
         {
             var world = new List<IHitable>();
             world.Add(new Sphere(new Vector3(0, -1000f, 0), 1000, new Lambertian(new Vector3(0.33f, 0.67f, 0.0f))));
@@ -82,17 +90,17 @@ namespace raytracinginoneweekend
             var black = new Vector3(0.14f, 0.07f, 0.07f);
             var white = new Vector3(1f, 1f, 0.9f);
 
-            for (var a = 1f; a <= 5; a+=1f)
+            for (var a = 1f; a <= 5; a += 1f)
             {
-                var counter = 0-a;
+                var counter = 0 - a;
                 for (var b = 0f; b < a; b += 1f)
                 {
-                    var center = new Vector3(a*0.9f - 5f , 0.5f,  a/2f - b - 0.5f );
+                    var center = new Vector3(a * 0.9f - 5f, 0.5f, a / 2f - b - 0.5f);
                     var colour = counter % 2 == 0 ? red : yellow;
-                    if(a == 3 && b == 1 )
+                    if (a == 3 && b == 1)
                     {
                         colour = black;
-                    } if(a == 3 && b == 2) {
+                    } if (a == 3 && b == 2) {
                         colour = red;
                     } if (a == 5 && b == 4)
                     {
@@ -108,7 +116,14 @@ namespace raytracinginoneweekend
             world.Add(new MovingSphere(cueCenter, cueCenter + new Vector3(0.75f * rnd.NextFloat(), 0, 0), 0.0f, 1.0f, 0.5f,
                 new Metal(white, 0.1f)));
 
-            return world;
+            var lookFrom = new Vector3(-9, 3.5f, 12);
+            var lookAt = new Vector3(-3, 0, 0);
+            var distToFocus = (lookFrom - new Vector3(-6, 0.5f, 0)).Length();
+            var aperture = 0.5f;
+
+            var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus, 0.0f, 1.0f);
+
+            return (world, cam);
         }
 
 
@@ -119,18 +134,10 @@ namespace raytracinginoneweekend
             int ny = 400;
             int ns = 100;
 
-            var world = PoolScene(new SunsetquestRandom());
+            var (world, cam) = RandomScene(new SunsetquestRandom(), nx, ny);
             var wl = world.ToArray();
 
-            var lookFrom = new Vector3(-9, 3.5f, 12);
-            var lookAt = new Vector3(-3, 0, 0);
-            var distToFocus = (lookFrom - new Vector3(-6, 0.5f, 0)).Length();
-            var aperture = 0.5f;
-
-            var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), 20, (float)nx / (float)ny, aperture, distToFocus, 0.0f, 1.0f);
-
             uint totalRayCount = 0;
-
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
                 sw.Start();
