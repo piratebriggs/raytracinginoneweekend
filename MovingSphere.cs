@@ -28,7 +28,7 @@ namespace raytracinginoneweekend
 
         public Vector3 Pos => Center0 + (Center1 - Center0);
 
-        float IHitable.Radius => Radius + (Center1 - Center0).Length();
+        float IHitable.Radius => Radius + Math.Abs((Center1 - Center0).Length());
 
         public bool Hit(Ray r, float tMin, float tMax, ref HitRecord rec)
         {

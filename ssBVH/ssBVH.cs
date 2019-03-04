@@ -68,12 +68,23 @@ namespace SimpleScene.Util.ssBVH
             this._traverse(rootBVH,hitTest,hits);
             return hits;
         }
-        
-        // left in for compatibility..
-        public List<ssBVHNode<GO>> traverseRay(raytracinginoneweekend.Ray ray) {
-            float tnear = 0f, tfar = 0f;
 
-            return traverse( box => intersectRayAABox1(ray,box,ref tnear, ref tfar) );
+        private void _traverse2(ssBVHNode<GO> curNode, raytracinginoneweekend.Ray ray, List<ssBVHNode<GO>> hitlist)
+        {
+            if (curNode == null) { return; }
+            if (curNode.intersectRayAABox1(ray))
+            {
+                hitlist.Add(curNode);
+                _traverse2(curNode.left, ray, hitlist);
+                _traverse2(curNode.right, ray, hitlist);
+            }
+        }
+
+        public List<ssBVHNode<GO>> traverseRay(raytracinginoneweekend.Ray ray)
+        {
+            var hits = new List<ssBVHNode<GO>>();
+            this._traverse2(rootBVH, ray, hits);
+            return hits;
         }
 
         public List<ssBVHNode<GO>> traverse(raytracinginoneweekend.Ray ray) {
