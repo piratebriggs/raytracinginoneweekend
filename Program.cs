@@ -1,10 +1,12 @@
 ﻿using raytracinginoneweekend.Materials;
+using SimpleScene.Util.ssBVH;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -16,10 +18,33 @@ namespace raytracinginoneweekend
     {
         public static Stopwatch sw = new Stopwatch();
 
-        static Vector3 Color(Ray r, IHitable[] world, int depth, ImSoRandom rnd, ref uint rayCount) {
+        static Vector3 Color(Ray r, ssBVH<IHitable> world, int depth, ImSoRandom rnd, ref uint rayCount) {
             rayCount++;
+
             var rec = new HitRecord();
-            if (world.Hit(r, 0.001f, float.MaxValue, ref rec))
+            var tempRec = new HitRecord();
+            bool hitAnything = false;
+            float closestSoFar = float.MaxValue;
+
+            var hits = world.traverseRay(r);
+
+            foreach (var hit in hits)
+            {
+                if (hit.gobjects != null)
+                {
+                    foreach (var hitable in hit.gobjects)
+                    {
+                        if (hitable.Hit(r, 0.001f, closestSoFar, ref tempRec))
+                        {
+                            hitAnything = true;
+                            closestSoFar = tempRec.T;
+                            rec = tempRec;
+                        }
+                    }
+                }
+            }
+
+            if (hitAnything)
             {
                 Ray scattered;
                 Vector3 attenuation;
@@ -138,6 +163,8 @@ namespace raytracinginoneweekend
             var (world, cam) = RandomScene(new SunsetquestRandom(), nx, ny);
             var wl = world.ToArray();
 
+            var worldBVH = new ssBVH<IHitable>(new IHitableBVHNodeAdaptor(), world);
+
             uint totalRayCount = 0;
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
             {
@@ -147,14 +174,14 @@ namespace raytracinginoneweekend
                     var rnd = new SunsetquestRandom();
                     for (int j = 0; j < ny; j++)
                     {
-                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, ref totalRayCount);
+                        RenderRow(image, worldBVH, cam, j, nx, ny, ns, rnd, ref totalRayCount);
                     }
                 }
                 else
                 {
                     Parallel.For(0, ny, () => new SunsetquestRandom(), (j, loop, rnd) =>
                     {
-                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, ref totalRayCount);
+                        RenderRow(image, worldBVH, cam, j, nx, ny, ns, rnd, ref totalRayCount);
                         return rnd;
                     }, (rnd) => { });
                 }
@@ -170,7 +197,7 @@ namespace raytracinginoneweekend
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void RenderRow(Image<Rgba32> image, IHitable[] wl, Camera cam, int j, int nx, int ny, int ns, ImSoRandom rnd, ref uint rayCount)
+        private static void RenderRow(Image<Rgba32> image, ssBVH<IHitable> wl, Camera cam, int j, int nx, int ny, int ns, ImSoRandom rnd, ref uint rayCount)
         {
             var index = ny - 1 - j;
             var rowSpan = image.GetPixelRowSpan(index);

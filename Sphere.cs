@@ -20,6 +20,10 @@ namespace raytracinginoneweekend
         public Vector3 Center;
         public IMaterial Material;
 
+        public Vector3 Pos => Center;
+
+        float IHitable.Radius => Radius;
+
         public bool Hit(Ray r, float tMin, float tMax, ref HitRecord rec)
         {
             var oc = r.Origin - Center;

@@ -70,33 +70,33 @@ namespace SimpleScene.Util.ssBVH
         }
         
         // left in for compatibility..
-        public List<ssBVHNode<GO>> traverseRay(SSRay ray) {
+        public List<ssBVHNode<GO>> traverseRay(raytracinginoneweekend.Ray ray) {
             float tnear = 0f, tfar = 0f;
 
             return traverse( box => intersectRayAABox1(ray,box,ref tnear, ref tfar) );
         }
 
-        public List<ssBVHNode<GO>> traverse(SSRay ray) {
+        public List<ssBVHNode<GO>> traverse(raytracinginoneweekend.Ray ray) {
             float tnear = 0f, tfar = 0f;
 
             return traverse( box => intersectRayAABox1(ray,box,ref tnear, ref tfar) );
         }
-        public static bool intersectRayAABox1(SSRay ray, SSAABB box, ref float tnear, ref float tfar)
+        public static bool intersectRayAABox1(raytracinginoneweekend.Ray ray, SSAABB box, ref float tnear, ref float tfar)
         {
             // r.dir is unit direction vector of ray
             Vector3 dirfrac = new Vector3();
             float t;
-            dirfrac.X = 1.0f / ray.dir.X;
-            dirfrac.Y = 1.0f / ray.dir.Y;
-            dirfrac.Z = 1.0f / ray.dir.Z;
+            dirfrac.X = 1.0f / ray.Direction.X;
+            dirfrac.Y = 1.0f / ray.Direction.Y;
+            dirfrac.Z = 1.0f / ray.Direction.Z;
             // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
             // r.org is origin of ray
-            float t1 = (box.Min.X - ray.pos.X) * dirfrac.X;
-            float t2 = (box.Max.X - ray.pos.X) * dirfrac.X;
-            float t3 = (box.Min.Y - ray.pos.Y) * dirfrac.Y;
-            float t4 = (box.Max.Y - ray.pos.Y) * dirfrac.Y;
-            float t5 = (box.Min.Z - ray.pos.Z) * dirfrac.Z;
-            float t6 = (box.Max.Z - ray.pos.Z) * dirfrac.Z;
+            float t1 = (box.Min.X - ray.Origin.X) * dirfrac.X;
+            float t2 = (box.Max.X - ray.Origin.X) * dirfrac.X;
+            float t3 = (box.Min.Y - ray.Origin.Y) * dirfrac.Y;
+            float t4 = (box.Max.Y - ray.Origin.Y) * dirfrac.Y;
+            float t5 = (box.Min.Z - ray.Origin.Z) * dirfrac.Z;
+            float t6 = (box.Max.Z - ray.Origin.Z) * dirfrac.Z;
 
             float tmin = Math.Max(Math.Max(Math.Min(t1, t2), Math.Min(t3, t4)), Math.Min(t5, t6));
             float tmax = Math.Min(Math.Min(Math.Max(t1, t2), Math.Max(t3, t4)), Math.Max(t5, t6));

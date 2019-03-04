@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 using raytracinginoneweekend;
-using SimpleScene;
+
 
 namespace SimpleScene.Util.ssBVH
 {
