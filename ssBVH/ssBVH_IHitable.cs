@@ -19,21 +19,11 @@ namespace SimpleScene.Util.ssBVH
     {
         Dictionary<IHitable, ssBVHNode<IHitable>> ssToLeafMap = new Dictionary<IHitable, ssBVHNode<IHitable>>();
 
-        public Vector3 objectpos(IHitable obj)
+        public SSAABB boundingBox(IHitable obj)
         {
-            return obj.Pos;
+            return obj.BoundingBox;
         }
-        public float radius(IHitable obj)
-        {
-            if (obj.Radius >= 0f)
-            {
-                return obj.Radius;
-            }
-            else
-            {
-                return 1.0f;
-            }
-        }
+
         public void checkMap(IHitable obj)
         {
             if (!ssToLeafMap.ContainsKey(obj))

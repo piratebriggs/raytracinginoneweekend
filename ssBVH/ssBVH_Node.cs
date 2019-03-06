@@ -146,49 +146,22 @@ namespace SimpleScene.Util.ssBVH
              }
         }
 
-         private void expandVolume(SSBVHNodeAdaptor<GO> nAda, Vector3 objectpos, float radius) {
-            bool expanded = false;
+         private void expandVolume(SSBVHNodeAdaptor<GO> nAda, SSAABB targetBox) {
 
-            // test min X and max X against the current bounding volume
-            if ((objectpos.X - radius) < box.Min.X) {
-                box.Min.X = (objectpos.X - radius); expanded = true;                
-            }
-            if ((objectpos.X + radius) > box.Max.X) {
-                box.Max.X = (objectpos.X + radius); expanded = true;                
-            }         
-            // test min Y and max Y against the current bounding volume
-            if ((objectpos.Y - radius) < box.Min.Y) {
-                box.Min.Y = (objectpos.Y - radius); expanded = true;                
-            }
-            if ((objectpos.Y + radius) > box.Max.Y) {
-                box.Max.Y = (objectpos.Y + radius); expanded = true;                
-            }           
-            // test min Z and max Z against the current bounding volume
-            if ( (objectpos.Z - radius) < box.Min.Z ) {
-                box.Min.Z = (objectpos.Z - radius); expanded = true;                
-            }
-            if ( (objectpos.Z + radius) > box.Max.Z ) {
-                box.Max.Z = (objectpos.Z + radius); expanded = true;                
-            }
+            var boxCopy = box;
+            box.ExpandToFit(targetBox);
+
+            var expanded = !boxCopy.Equals(box);
 
             if (expanded && parent != null) {                
                 parent.childExpanded(nAda, this);
             }           
         }
 
-        private void assignVolume(Vector3 objectpos, float radius) {
-            box.Min.X = objectpos.X - radius;
-            box.Max.X = objectpos.X + radius;
-            box.Min.Y = objectpos.Y - radius;
-            box.Max.Y = objectpos.Y + radius;
-            box.Min.Z = objectpos.Z - radius;
-            box.Max.Z = objectpos.Z + radius;
-        }      
-
-        internal void computeVolume(SSBVHNodeAdaptor<GO> nAda) {            
-            assignVolume( nAda.objectpos(gobjects[0]), nAda.radius(gobjects[0]));
+        internal void computeVolume(SSBVHNodeAdaptor<GO> nAda) {
+            box = nAda.boundingBox(gobjects[0]);
             for(int i=1; i<gobjects.Count;i++) {
-                expandVolume( nAda, nAda.objectpos(gobjects[i]) , nAda.radius(gobjects[i]) );
+                expandVolume( nAda, nAda.boundingBox(gobjects[i]));
             }      
         }
         
@@ -229,12 +202,6 @@ namespace SimpleScene.Util.ssBVH
 
             return 2.0f * ( (x_size * y_size) + (x_size * z_size) + (y_size * z_size) );
         }
-        internal static float SA(SSBVHNodeAdaptor<GO> nAda, GO obj) {            
-            float radius = nAda.radius(obj);
-
-            float size = radius * 2;
-            return 6.0f * (size * size);            
-        }
         
         internal static SSAABB AABBofPair(ssBVHNode<GO> nodea, ssBVHNode<GO> nodeb) {
             SSAABB box = nodea.box;
@@ -253,12 +220,7 @@ namespace SimpleScene.Util.ssBVH
             return SA(ref pairbox);
         }
         internal static SSAABB AABBofOBJ(SSBVHNodeAdaptor<GO> nAda, GO obj) {
-            float radius = nAda.radius(obj);
-            SSAABB box;
-            box.Min.X = -radius; box.Max.X = radius;
-            box.Min.Y = -radius; box.Max.Y = radius;
-            box.Min.Z = -radius; box.Max.Z = radius;
-            return box;
+            return nAda.boundingBox(obj);
         }
 
         internal float SAofList(SSBVHNodeAdaptor<GO> nAda, List<GO> list) {
@@ -418,6 +380,7 @@ namespace SimpleScene.Util.ssBVH
             }
         }        
 
+        // TODO: will need to calculate center of AABB
         internal void splitNode(SSBVHNodeAdaptor<GO> nAda) {
             // second, decide which axis to split on, and sort..
             List<GO> splitlist = gobjects; 
@@ -428,13 +391,13 @@ namespace SimpleScene.Util.ssBVH
                 var orderedlist = new List<GO>(splitlist);                
                 switch (axis) {
                     case Axis.X: 
-                        orderedlist.Sort(delegate(GO go1, GO go2) { return nAda.objectpos(go1).X.CompareTo(nAda.objectpos(go2).X); }); 
+                        orderedlist.Sort(delegate(GO go1, GO go2) { return nAda.boundingBox(go1).Center().X.CompareTo(nAda.boundingBox(go2).Center().X); }); 
                         break;
                     case Axis.Y: 
-                        orderedlist.Sort(delegate(GO go1, GO go2) { return nAda.objectpos(go1).Y.CompareTo(nAda.objectpos(go2).Y); }); 
+                        orderedlist.Sort(delegate(GO go1, GO go2) { return nAda.boundingBox(go1).Center().Y.CompareTo(nAda.boundingBox(go2).Center().Y); }); 
                         break;
                     case Axis.Z: 
-                        orderedlist.Sort(delegate(GO go1, GO go2) { return nAda.objectpos(go1).Z.CompareTo(nAda.objectpos(go2).Z); }); 
+                        orderedlist.Sort(delegate(GO go1, GO go2) { return nAda.boundingBox(go1).Center().Z.CompareTo(nAda.boundingBox(go2).Center().Z); }); 
                         break;
                     default:
                         throw new NotImplementedException("unknown split axis: " + axis.ToString());

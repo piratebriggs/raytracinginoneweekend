@@ -113,18 +113,6 @@ namespace SimpleScene
 			this = this.ExpandedBy (b);
 		}
 
-		public static SSAABB FromSphere(Vector3 pos, float radius) {
-            SSAABB box;
-            box.Min.X = pos.X - radius;
-            box.Max.X = pos.X + radius;
-            box.Min.Y = pos.Y - radius;
-            box.Max.Y = pos.Y + radius;
-            box.Min.Z = pos.Z - radius;
-            box.Max.Z = pos.Z + radius;
-
-            return box;
-        }
-
         private static readonly Vector4[] c_homogenousCorners = {
             new Vector4(-1f, -1f, -1f, 1f),
             new Vector4(-1f, 1f, -1f, 1f),

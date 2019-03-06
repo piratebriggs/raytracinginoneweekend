@@ -32,8 +32,9 @@ namespace SimpleScene.Util.ssBVH
     public interface SSBVHNodeAdaptor<GO> {
         ssBVH<GO> BVH { get; }
         void setBVH(ssBVH<GO> bvh);
-        Vector3 objectpos(GO obj);
-        float radius(GO obj);
+
+        SSAABB boundingBox(GO obj);
+
         void mapObjectToBVHLeaf(GO obj, ssBVHNode<GO> leaf);
         void unmapObject(GO obj);
         void checkMap(GO obj);
@@ -157,7 +158,7 @@ namespace SimpleScene.Util.ssBVH
         }
 
         public void addObject(GO newOb) {
-            SSAABB box = SSAABB.FromSphere(nAda.objectpos(newOb),nAda.radius(newOb));
+            SSAABB box = nAda.boundingBox(newOb);
             float boxSAH = ssBVHNode<GO>.SA(ref box);
             rootBVH.addObject(nAda,newOb, ref box, boxSAH);
         }

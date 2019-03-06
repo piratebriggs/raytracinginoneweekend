@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Numerics;
 using raytracinginoneweekend.Materials;
+using SimpleScene;
 
 namespace raytracinginoneweekend
 {
@@ -14,15 +15,26 @@ namespace raytracinginoneweekend
             Center = center;
             Radius = radius;
             Material = material;
+
+            Box.Min.X = Center.X - Radius;
+            Box.Max.X = Center.X + Radius;
+            Box.Min.Y = Center.Y - Radius;
+            Box.Max.Y = Center.Y + Radius;
+            Box.Min.Z = Center.Z - Radius;
+            Box.Max.Z = Center.Z + Radius;
         }
 
         public float Radius;
         public Vector3 Center;
         public IMaterial Material;
+        SSAABB Box;
 
-        public Vector3 Pos => Center;
-
-        float IHitable.Radius => Radius;
+        public  SSAABB BoundingBox
+        {
+            get {
+                return Box;
+            }
+        }
 
         public bool Hit(Ray r, float tMin, float tMax, ref HitRecord rec)
         {

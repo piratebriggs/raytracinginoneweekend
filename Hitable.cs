@@ -1,4 +1,5 @@
 ﻿using raytracinginoneweekend.Materials;
+using SimpleScene;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -16,8 +17,7 @@ namespace raytracinginoneweekend
 
     public interface IHitable
     {
-        Vector3 Pos { get; }
-        float Radius { get; }
+        SSAABB BoundingBox { get; }
         bool Hit(Ray r, float tMin, float tMax, ref HitRecord rec);
     }
 
