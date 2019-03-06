@@ -22,11 +22,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 
 namespace SimpleScene.Util.ssBVH
 {
@@ -44,50 +42,6 @@ namespace SimpleScene.Util.ssBVH
 
         public override string ToString() {
             return String.Format("ssBVHNode<{0}>:{1}",typeof(GO),this.nodeNumber);
-        }
-
-        public  bool intersectRayAABox1(raytracinginoneweekend.Ray ray)
-        {
-            float tMin = 0.001f;
-            float tMax = float.MaxValue;
-
-            if (!intersectPlane(box.Min.X, box.Max.X, ray.Direction.X, ray.Origin.X, ref tMin, ref tMax))
-            {
-                return false;
-            }
-            if (!intersectPlane(box.Min.Y, box.Max.Y, ray.Direction.Y, ray.Origin.Y, ref tMin, ref tMax))
-            {
-                return false;
-            }
-            if (!intersectPlane(box.Min.Z, box.Max.Z, ray.Direction.Z, ray.Origin.Z, ref tMin, ref tMax))
-            {
-                return false;
-            }
-            return true;
-
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool intersectPlane(float boxMin, float boxMax,float dir, float origin, ref float tmin, ref float tmax)
-        {
-            // Implemenation of aabb:hit from Raytracing in one weekend
-            var invD = 1.0f / dir;
-            float t0 = (boxMin - origin) * invD;
-            float t1 = (boxMax - origin) * invD;
-
-            if (invD < 0.0f)
-            {
-                float temp = t0;
-                t0 = t1;
-                t1 = temp;
-            }
-            tmin = t0 > tmin ? t0 : tmin;
-            tmax = t1 < tmax ? t1 : tmax;
-
-            if (tmax < tmin)
-            {
-                return false;
-            }
-            return true;
         }
 
         private Axis pickSplitAxis() {            

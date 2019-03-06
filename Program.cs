@@ -17,6 +17,49 @@ namespace raytracinginoneweekend
     class Program
     {
         public static Stopwatch sw = new Stopwatch();
+        public static bool intersectRayAABox1(raytracinginoneweekend.Ray ray, SSAABB box, ref float tnear, ref float tfar)
+        {
+            float tMin = 0.001f;
+            float tMax = float.MaxValue;
+
+            if (!intersectPlane(box.Min.X, box.Max.X, ray.Direction.X, ray.Origin.X, ref tMin, ref tMax))
+            {
+                return false;
+            }
+            if (!intersectPlane(box.Min.Y, box.Max.Y, ray.Direction.Y, ray.Origin.Y, ref tMin, ref tMax))
+            {
+                return false;
+            }
+            if (!intersectPlane(box.Min.Z, box.Max.Z, ray.Direction.Z, ray.Origin.Z, ref tMin, ref tMax))
+            {
+                return false;
+            }
+            return true;
+
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool intersectPlane(float boxMin, float boxMax, float dir, float origin, ref float tmin, ref float tmax)
+        {
+            // Implemenation of aabb:hit from Raytracing in one weekend
+            var invD = 1.0f / dir;
+            float t0 = (boxMin - origin) * invD;
+            float t1 = (boxMax - origin) * invD;
+
+            if (invD < 0.0f)
+            {
+                float temp = t0;
+                t0 = t1;
+                t1 = temp;
+            }
+            tmin = t0 > tmin ? t0 : tmin;
+            tmax = t1 < tmax ? t1 : tmax;
+
+            if (tmax < tmin)
+            {
+                return false;
+            }
+            return true;
+        }
 
         static Vector3 Color(Ray r, ssBVH<IHitable> world, int depth, ImSoRandom rnd, ref uint rayCount) {
             rayCount++;
@@ -26,7 +69,8 @@ namespace raytracinginoneweekend
             bool hitAnything = false;
             float closestSoFar = float.MaxValue;
 
-            var hits = world.traverseRay(r);
+            float tnear = 0f, tfar = 0f;
+            var hits = world.traverse(box => intersectRayAABox1(r, box, ref tnear, ref tfar));
 
             foreach (var hit in hits)
             {

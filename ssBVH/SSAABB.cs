@@ -2,7 +2,6 @@
 // Released to the public domain. 
 
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 
 namespace SimpleScene
