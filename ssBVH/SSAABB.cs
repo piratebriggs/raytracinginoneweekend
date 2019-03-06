@@ -42,11 +42,6 @@ namespace SimpleScene
             }
         }
 
-		public bool IntersectsSphere(SSSphere sphere)
-		{
-			return IntersectsSphere (sphere.center, sphere.radius);
-		}
-
         public bool IntersectsAABB(SSAABB box) {
             return ( (Max.X > box.Min.X) && (Min.X < box.Max.X) &&
                      (Max.Y > box.Min.Y) && (Min.Y < box.Max.Y) &&
@@ -78,12 +73,6 @@ namespace SimpleScene
         public Vector3 Diff() {
             return Max - Min;
         }
-
-		public SSSphere ToSphere()
-		{
-			float r = (Diff ().Length() + 0.001f)/2f;
-			return new SSSphere (Center (), r);
-		}
 
         internal void ExpandToFit(SSAABB b) {
             if (b.Min.X < this.Min.X) { this.Min.X = b.Min.X; }            
