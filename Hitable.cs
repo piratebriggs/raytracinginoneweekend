@@ -12,6 +12,8 @@ namespace raytracinginoneweekend
         public float T;
         public Vector3 P;
         public Vector3 Normal;
+        public float U;
+        public float V;
         public Material Material;
     }
 

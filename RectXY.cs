@@ -35,8 +35,8 @@ namespace raytracinginoneweekend
             float y = r.Origin.Y + t * r.Direction.Y;
             if (x < x0 || x > x1 || y < y0 || y > y1)
                 return false;
-            //rec.u = (x - x0) / (x1 - x0);
-            //ec.v = (y - y0) / (y1 - y0);
+            rec.U = (x - x0) / (x1 - x0);
+            rec.V = (y - y0) / (y1 - y0);
             rec.T = t;
             rec.Material = mat;
             rec.P = r.PointAtParameter(t);

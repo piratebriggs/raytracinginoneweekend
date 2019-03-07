@@ -19,7 +19,7 @@ namespace raytracinginoneweekend.Materials
         {
             Vector3 target = rec.P + rec.Normal + rnd.RandomInUnitSphere();
             scattererd = new Ray(rec.P, target - rec.P, rayIn.Time);
-            attenuation = _albedo.value(0, 0, ref rec.P);
+            attenuation = _albedo.value(rec.U, rec.V, ref rec.P);
             return true;
 
         }

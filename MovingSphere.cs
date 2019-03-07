@@ -83,6 +83,7 @@ namespace raytracinginoneweekend
             rec.P = r.PointAtParameter(rec.T);
             rec.Normal = (rec.P - Center(r.Time)) / Radius;
             rec.Material = Material;
+            Sphere.GetSphereUv(ref rec.P, out rec.U, out rec.V);
         }
     }
 }
