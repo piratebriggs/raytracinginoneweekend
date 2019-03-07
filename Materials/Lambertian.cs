@@ -1,4 +1,5 @@
-﻿using System;
+﻿using raytracinginoneweekend.Textures;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
@@ -7,9 +8,9 @@ namespace raytracinginoneweekend.Materials
 {
     public class Lambertian : IMaterial
     {
-        private Vector3 _albedo;
+        private Texture _albedo;
 
-        public Lambertian(Vector3 a)
+        public Lambertian(Texture a)
         {
             _albedo = a;
         }
@@ -18,7 +19,7 @@ namespace raytracinginoneweekend.Materials
         {
             Vector3 target = rec.P + rec.Normal + rnd.RandomInUnitSphere();
             scattererd = new Ray(rec.P, target - rec.P, rayIn.Time);
-            attenuation = _albedo;
+            attenuation = _albedo.value(0, 0, ref rec.P);
             return true;
 
         }

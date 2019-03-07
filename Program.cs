@@ -109,7 +109,9 @@ namespace raytracinginoneweekend
         private static (List<IHitable>, Camera) RandomScene(ImSoRandom rnd, int nx, int ny)
         {
             var world = new List<IHitable>();
-            world.Add(new Sphere(new Vector3(0, -1000f, 0), 1000, new Lambertian(new Vector3(0.5f, 0.5f, 0.5f))));
+
+            var texture = new CheckerTexture(new ConstantTexture(0.2f, 0.3f, 0.1f), new ConstantTexture(0.9f, 0.9f, 0.9f));
+            world.Add(new Sphere(new Vector3(0, -1000f, 0), 1000, new Lambertian(texture)));
 
             for (int a = -11; a < 11; a++)
             {
@@ -121,7 +123,8 @@ namespace raytracinginoneweekend
                     {
                         if (choose_mat < 0.8)
                         {  // diffuse
-                            world.Add(new MovingSphere(center, center + new Vector3(0, 0.5f * rnd.NextFloat(), 0), 0.0f, 1.0f, 0.2f, new Lambertian(new Vector3(rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat()))));
+                            world.Add(new MovingSphere(center, center + new Vector3(0, 0.5f * rnd.NextFloat(), 0), 0.0f, 1.0f, 0.2f, new Lambertian(new ConstantTexture(rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat()))));
+                            //world.Add(new Sphere(center, 0.2f, new Lambertian(new Vector3(rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat(), rnd.NextFloat() * rnd.NextFloat()))));
                         }
                         else if (choose_mat < 0.95)
                         { // metal
@@ -137,7 +140,7 @@ namespace raytracinginoneweekend
             }
 
             world.Add(new Sphere(new Vector3(0, 1, 0), 1.0f, new Dialectric(1.5f)));
-            world.Add(new Sphere(new Vector3(-4, 1, 0), 1.0f, new Lambertian(new Vector3(0.4f, 0.2f, 0.1f))));
+            world.Add(new Sphere(new Vector3(-4, 1, 0), 1.0f, new Lambertian(new ConstantTexture(0.4f, 0.2f, 0.1f))));
             world.Add(new Sphere(new Vector3(4, 1, 0), 1.0f, new Metal(new Vector3(0.7f, 0.6f, 0.5f), 0f)));
 
             var lookFrom = new Vector3(13, 2, 3);
@@ -153,7 +156,7 @@ namespace raytracinginoneweekend
         private static (List<IHitable>, Camera) PoolScene(ImSoRandom rnd, int nx, int ny)
         {
             var world = new List<IHitable>();
-            world.Add(new Sphere(new Vector3(0, -1000f, 0), 1000, new Lambertian(new Vector3(0.33f, 0.67f, 0.0f))));
+            world.Add(new Sphere(new Vector3(0, -1000f, 0), 1000, new Lambertian(new ConstantTexture(0.33f, 0.67f, 0.0f))));
             var red = new Vector3(0.68f, 0.13f, 0.16f);
             var yellow = new Vector3(1f, 0.74f, 0.13f);
             var black = new Vector3(0.14f, 0.07f, 0.07f);
