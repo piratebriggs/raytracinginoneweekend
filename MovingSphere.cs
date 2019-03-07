@@ -10,7 +10,7 @@ namespace raytracinginoneweekend
     public class MovingSphere : IHitable
     {
 
-        public MovingSphere(Vector3 center0, Vector3 center1,float t0, float t1 , float radius, IMaterial material)
+        public MovingSphere(Vector3 center0, Vector3 center1,float t0, float t1 , float radius, Material material)
         {
             Center0 = center0;
             Center1 = center1;
@@ -36,7 +36,7 @@ namespace raytracinginoneweekend
         public Vector3 Center1;
         public float T0;
         public float T1;
-        public IMaterial Material;
+        public Material Material;
         SSAABB Box;
 
         public SSAABB BoundingBox

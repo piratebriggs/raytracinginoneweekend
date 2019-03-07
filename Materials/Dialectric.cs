@@ -5,7 +5,7 @@ using System.Text;
 
 namespace raytracinginoneweekend.Materials
 {
-    public class Dialectric : IMaterial
+    public class Dialectric : Material
     {
         private float _refIndex;
 
@@ -14,7 +14,7 @@ namespace raytracinginoneweekend.Materials
             _refIndex = ri;
         }
 
-        public bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd, ImSoRandom random)
+        public override bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd, ImSoRandom random)
         {
             Vector3 reflected = Vector3.Reflect(rayIn.Direction, rec.Normal);
             attenuation = new Vector3(1.0f);

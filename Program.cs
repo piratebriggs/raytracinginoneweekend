@@ -92,18 +92,17 @@ namespace raytracinginoneweekend
             {
                 Ray scattered;
                 Vector3 attenuation;
+                var emitted = rec.Material.Emitted(0, 0, ref rec.P);
                 if (depth < 50 && rec.Material.Scatter(r, rec, out attenuation, out scattered, rnd))
                 {
-                    return attenuation * Color(scattered, world, depth + 1, rnd, ref rayCount);
+                    return emitted + attenuation * Color(scattered, world, depth + 1, rnd, ref rayCount);
                 }
                 else
                 {
-                    return new Vector3(0);
+                    return emitted;
                 }
             }
-            var unit_direction = Vector3.Normalize(r.Direction);
-            var t = 0.5f * (unit_direction.Y + 1.0f);
-            return (1.0f - t) * new Vector3(1.0f, 1.0f, 1.0f) + t * new Vector3(0.5f, 0.7f, 1.0f);
+            return Vector3.Zero;
         }
 
         private static (List<IHitable>, Camera) RandomScene(ImSoRandom rnd, int nx, int ny)
@@ -142,6 +141,9 @@ namespace raytracinginoneweekend
             world.Add(new Sphere(new Vector3(0, 1, 0), 1.0f, new Dialectric(1.5f)));
             world.Add(new Sphere(new Vector3(-4, 1, 0), 1.0f, new Lambertian(new ConstantTexture(0.4f, 0.2f, 0.1f))));
             world.Add(new Sphere(new Vector3(4, 1, 0), 1.0f, new Metal(new Vector3(0.7f, 0.6f, 0.5f), 0f)));
+
+            world.Add(new RectXY(3,5,1,3,-2,new DiffuseLight(new ConstantTexture(new Vector3(4,4,4)))));
+
 
             var lookFrom = new Vector3(13, 2, 3);
             var lookAt = new Vector3(0, 0, 0);

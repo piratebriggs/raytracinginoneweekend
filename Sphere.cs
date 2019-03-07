@@ -10,7 +10,7 @@ namespace raytracinginoneweekend
     public class Sphere : IHitable
     {
 
-        public Sphere(Vector3 center, float radius, IMaterial material)
+        public Sphere(Vector3 center, float radius, Material material)
         {
             Center = center;
             Radius = radius;
@@ -26,7 +26,7 @@ namespace raytracinginoneweekend
 
         public float Radius;
         public Vector3 Center;
-        public IMaterial Material;
+        public Material Material;
         SSAABB Box;
 
         public  SSAABB BoundingBox

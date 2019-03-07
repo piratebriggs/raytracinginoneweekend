@@ -12,7 +12,7 @@ namespace raytracinginoneweekend
         public float T;
         public Vector3 P;
         public Vector3 Normal;
-        public IMaterial Material;
+        public Material Material;
     }
 
     public interface IHitable

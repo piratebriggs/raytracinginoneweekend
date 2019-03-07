@@ -6,7 +6,7 @@ using System.Text;
 
 namespace raytracinginoneweekend.Materials
 {
-    public class Lambertian : IMaterial
+    public class Lambertian : Material
     {
         private Texture _albedo;
 
@@ -15,7 +15,7 @@ namespace raytracinginoneweekend.Materials
             _albedo = a;
         }
 
-        public bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd, ImSoRandom rnd)
+        public override bool Scatter(Ray rayIn, HitRecord rec, out Vector3 attenuation, out Ray scattererd, ImSoRandom rnd)
         {
             Vector3 target = rec.P + rec.Normal + rnd.RandomInUnitSphere();
             scattererd = new Ray(rec.P, target - rec.P, rayIn.Time);

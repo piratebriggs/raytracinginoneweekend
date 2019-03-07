@@ -5,8 +5,13 @@ using System.Numerics;
 
 namespace raytracinginoneweekend.Materials
 {
-    public interface IMaterial
+    public abstract class Material
     {
-        bool Scatter(Ray rayIn, HitRecord hitRecord, out Vector3 attenuation, out Ray scattererd, ImSoRandom rnd);
+        public abstract bool Scatter(Ray rayIn, HitRecord hitRecord, out Vector3 attenuation, out Ray scattererd, ImSoRandom rnd);
+        public virtual Vector3 Emitted(float u, float v, ref Vector3 p)
+        {
+            return new Vector3(0, 0, 0);
+        }
     }
+
 }
