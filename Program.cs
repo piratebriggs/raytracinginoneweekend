@@ -142,7 +142,7 @@ namespace raytracinginoneweekend
             world.Add(new Sphere(new Vector3(-4, 1, 0), 1.0f, new Lambertian(new ConstantTexture(0.4f, 0.2f, 0.1f))));
             world.Add(new Sphere(new Vector3(4, 1, 0), 1.0f, new Metal(new Vector3(0.7f, 0.6f, 0.5f), 0f)));
 
-            world.Add(new RectXY(3,5,1,3,-2,new DiffuseLight(new ConstantTexture(new Vector3(4,4,4)))));
+            world.Add(new Sphere(new Vector3(0, 0, 0), 20.0f, new DiffuseLight(new ConstantTexture(new Vector3(1,1,1)))));
 
 
             var lookFrom = new Vector3(13, 2, 3);
