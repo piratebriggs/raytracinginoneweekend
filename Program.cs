@@ -200,6 +200,32 @@ namespace raytracinginoneweekend
             return (world, cam);
         }
 
+        private static (List<IHitable>, Camera) CornellScene(ImSoRandom rnd, int nx, int ny)
+        {
+            var world = new List<IHitable>();
+
+            var red = new Lambertian(new ConstantTexture(0.65f, 0.05f, 0.05f));
+            var white = new Lambertian(new ConstantTexture(0.73f, 0.73f, 0.73f));
+            var green = new Lambertian(new ConstantTexture(0.12f, 0.45f, 0.15f));
+            var light = new DiffuseLight(new ConstantTexture(15f, 15f, 15f));
+
+            world.Add(new RectYZ(0, 555, 0, 555, 555, green));
+            world.Add(new RectYZ(0, 555, 0, 555, 0, red));
+            world.Add(new RectXZ(213, 343, 227, 332, 554, light));
+            world.Add(new RectXZ(0, 555, 0, 555, 555, white));
+            world.Add(new RectXZ(0, 555, 0, 555, 0, white));
+            world.Add(new RectXY(0, 555, 0, 555, 555, white));
+
+            var lookFrom = new Vector3(278, 278, -800);
+            var lookAt = new Vector3(278, 278, 0);
+            var distToFocus = 10;
+            var aperture = 0.1f;
+            var vFov = 40;
+
+            var cam = new Camera(lookFrom, lookAt, new Vector3(0, 1, 0), vFov, (float)nx / (float)ny, aperture, distToFocus, 0.0f, 1.0f);
+
+            return (world, cam);
+        }
 
         static void Main(string[] args)
         {
@@ -209,7 +235,7 @@ namespace raytracinginoneweekend
             int ns = 10;
             var singleThread = false;
 
-            var (world, cam) = RandomScene(new SunsetquestRandom(), nx, ny);
+            var (world, cam) = CornellScene(new SunsetquestRandom(), nx, ny);
             var wl = world.ToArray();
 
             var worldBVH = new ssBVH<IHitable>(new IHitableBVHNodeAdaptor(), world);
