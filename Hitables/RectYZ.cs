@@ -5,7 +5,7 @@ using System.Text;
 using raytracinginoneweekend.Materials;
 using SimpleScene;
 
-namespace raytracinginoneweekend
+namespace raytracinginoneweekend.Hitables
 {
     public class RectYZ : IHitable
     {

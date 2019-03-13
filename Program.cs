@@ -1,4 +1,7 @@
-﻿using raytracinginoneweekend.Materials;
+﻿using raytracinginoneweekend.Hitables;
+using raytracinginoneweekend.Materials;
+using raytracinginoneweekend.Textures;
+using SimpleScene;
 using SimpleScene.Util.ssBVH;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;

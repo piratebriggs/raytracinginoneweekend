@@ -5,40 +5,51 @@ using System.Numerics;
 using raytracinginoneweekend.Materials;
 using SimpleScene;
 
-namespace raytracinginoneweekend
+namespace raytracinginoneweekend.Hitables
 {
-    public class Sphere : IHitable
+    public class MovingSphere : IHitable
     {
 
-        public Sphere(Vector3 center, float radius, Material material)
+        public MovingSphere(Vector3 center0, Vector3 center1,float t0, float t1 , float radius, Material material)
         {
-            Center = center;
+            Center0 = center0;
+            Center1 = center1;
+            T0 = t0;
+            T1 = t1;
             Radius = radius;
             Material = material;
 
-            Box.Min.X = Center.X - Radius;
-            Box.Max.X = Center.X + Radius;
-            Box.Min.Y = Center.Y - Radius;
-            Box.Max.Y = Center.Y + Radius;
-            Box.Min.Z = Center.Z - Radius;
-            Box.Max.Z = Center.Z + Radius;
+
+            Box.Min = Vector3.Min(Center0, Center1);
+            Box.Max = Vector3.Max(Center0, Center1);
+
+            Box.Min.X -= Radius;
+            Box.Max.X += Radius;
+            Box.Min.Y -= Radius;
+            Box.Max.Y += Radius;
+            Box.Min.Z -= Radius;
+            Box.Max.Z += Radius;
         }
 
         public float Radius;
-        public Vector3 Center;
+        public Vector3 Center0;
+        public Vector3 Center1;
+        public float T0;
+        public float T1;
         public Material Material;
         SSAABB Box;
 
-        public  SSAABB BoundingBox
+        public SSAABB BoundingBox
         {
-            get {
+            get
+            {
                 return Box;
             }
         }
 
         public bool Hit(Ray r, float tMin, float tMax, ref HitRecord rec)
         {
-            var oc = r.Origin - Center;
+            var oc = r.Origin - Center(r.Time);
             var a = Vector3.Dot(r.Direction, r.Direction);
             var b = Vector3.Dot(oc, r.Direction);
             var c = Vector3.Dot(oc, oc) - Radius * Radius;
@@ -61,20 +72,18 @@ namespace raytracinginoneweekend
             return false;
         }
 
+        private Vector3 Center(float time)
+        {
+            return Center0 + ((time - T0) / (T1 - T0)) * (Center1 - Center0);
+        }
+
         private void GetHitRec(ref HitRecord rec, Ray r,float temp)
         {
             rec.T = temp;
             rec.P = r.PointAtParameter(rec.T);
-            rec.Normal = (rec.P - Center) / Radius;
+            rec.Normal = (rec.P - Center(r.Time)) / Radius;
             rec.Material = Material;
-            GetSphereUv(ref rec.P, out rec.U, out rec.V);
-        }
-
-        public static void GetSphereUv(ref Vector3 p, out float u, out float v) {
-            float phi = (float)Math.Atan2(p.Z, p.X);
-            float theta = (float)Math.Asin(p.Y);
-            u = (float)(1 - (phi + Math.PI) / (2 * Math.PI));
-            v = (float)((theta + Math.PI / 2) / Math.PI);
+            Sphere.GetSphereUv(ref rec.P, out rec.U, out rec.V);
         }
     }
 }
