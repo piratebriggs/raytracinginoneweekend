@@ -212,12 +212,12 @@ namespace raytracinginoneweekend
             var green = new Lambertian(new ConstantTexture(0.12f, 0.45f, 0.15f));
             var light = new DiffuseLight(new ConstantTexture(15f, 15f, 15f));
 
-            world.Add(new RectYZ(0, 555, 0, 555, 555, green));
+            world.Add(new FlipNormals(new RectYZ(0, 555, 0, 555, 555, green)));
             world.Add(new RectYZ(0, 555, 0, 555, 0, red));
             world.Add(new RectXZ(213, 343, 227, 332, 554, light));
-            world.Add(new RectXZ(0, 555, 0, 555, 555, white));
+            world.Add(new FlipNormals(new RectXZ(0, 555, 0, 555, 555, white)));
             world.Add(new RectXZ(0, 555, 0, 555, 0, white));
-            world.Add(new RectXY(0, 555, 0, 555, 555, white));
+            world.Add(new FlipNormals(new RectXY(0, 555, 0, 555, 555, white)));
 
             var lookFrom = new Vector3(278, 278, -800);
             var lookAt = new Vector3(278, 278, 0);
