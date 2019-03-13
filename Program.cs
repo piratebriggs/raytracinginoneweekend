@@ -219,6 +219,9 @@ namespace raytracinginoneweekend
             world.Add(new RectXZ(0, 555, 0, 555, 0, white));
             world.Add(new FlipNormals(new RectXY(0, 555, 0, 555, 555, white)));
 
+            world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 165, 165), white), new Vector3(130, 0, 65)));
+            world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 330, 165), white), new Vector3(265, 0, 295)));
+
             var lookFrom = new Vector3(278, 278, -800);
             var lookAt = new Vector3(278, 278, 0);
             var distToFocus = 10;
