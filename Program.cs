@@ -20,78 +20,13 @@ namespace raytracinginoneweekend
     class Program
     {
         public static Stopwatch sw = new Stopwatch();
-        public static bool intersectRayAABox1(raytracinginoneweekend.Ray ray, SSAABB box, ref float tnear, ref float tfar)
+
+        static Vector3 Color(Ray r, IHitable[] world, int depth, ImSoRandom rnd, ref uint rayCount)
         {
-            float tMin = 0.001f;
-            float tMax = float.MaxValue;
-
-            if (!intersectPlane(box.Min.X, box.Max.X, ray.Direction.X, ray.Origin.X, ref tMin, ref tMax))
-            {
-                return false;
-            }
-            if (!intersectPlane(box.Min.Y, box.Max.Y, ray.Direction.Y, ray.Origin.Y, ref tMin, ref tMax))
-            {
-                return false;
-            }
-            if (!intersectPlane(box.Min.Z, box.Max.Z, ray.Direction.Z, ray.Origin.Z, ref tMin, ref tMax))
-            {
-                return false;
-            }
-            return true;
-
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool intersectPlane(float boxMin, float boxMax, float dir, float origin, ref float tmin, ref float tmax)
-        {
-            // Implemenation of aabb:hit from Raytracing in one weekend
-            var invD = 1.0f / dir;
-            float t0 = (boxMin - origin) * invD;
-            float t1 = (boxMax - origin) * invD;
-
-            if (invD < 0.0f)
-            {
-                float temp = t0;
-                t0 = t1;
-                t1 = temp;
-            }
-            tmin = t0 > tmin ? t0 : tmin;
-            tmax = t1 < tmax ? t1 : tmax;
-
-            if (tmax < tmin)
-            {
-                return false;
-            }
-            return true;
-        }
-
-        static Vector3 Color(Ray r, ssBVH<IHitable> world, int depth, ImSoRandom rnd, ref uint rayCount) {
             rayCount++;
 
             var rec = new HitRecord();
-            var tempRec = new HitRecord();
-            bool hitAnything = false;
-            float closestSoFar = float.MaxValue;
-
-            float tnear = 0f, tfar = 0f;
-            var hits = world.traverse(box => intersectRayAABox1(r, box, ref tnear, ref tfar));
-
-            foreach (var hit in hits)
-            {
-                if (hit.gobjects != null)
-                {
-                    foreach (var hitable in hit.gobjects)
-                    {
-                        if (hitable.Hit(r, 0.001f, closestSoFar, ref tempRec))
-                        {
-                            hitAnything = true;
-                            closestSoFar = tempRec.T;
-                            rec = tempRec;
-                        }
-                    }
-                }
-            }
-
-            if (hitAnything)
+            if(world.Hit(r,0.001f,float.MaxValue,ref rec))
             {
                 Ray scattered;
                 Vector3 attenuation;
@@ -242,9 +177,10 @@ namespace raytracinginoneweekend
             var singleThread = false;
 
             var (world, cam) = CornellScene(new SunsetquestRandom(), nx, ny);
-            var wl = world.ToArray();
 
-            var worldBVH = new ssBVH<IHitable>(new IHitableBVHNodeAdaptor(), world);
+            var worldBVH = new BVH(world);
+            var wl = new IHitable[] { worldBVH };
+
 
             uint totalRayCount = 0;
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
@@ -255,14 +191,14 @@ namespace raytracinginoneweekend
                     var rnd = new SunsetquestRandom();
                     for (int j = 0; j < ny; j++)
                     {
-                        RenderRow(image, worldBVH, cam, j, nx, ny, ns, rnd, ref totalRayCount);
+                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, ref totalRayCount);
                     }
                 }
                 else
                 {
                     Parallel.For(0, ny, () => new SunsetquestRandom(), (j, loop, rnd) =>
                     {
-                        RenderRow(image, worldBVH, cam, j, nx, ny, ns, rnd, ref totalRayCount);
+                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, ref totalRayCount);
                         return rnd;
                     }, (rnd) => { });
                 }
@@ -274,11 +210,12 @@ namespace raytracinginoneweekend
             float mRate = rate / 1_000_000;
 
             Console.WriteLine($"totalRayCount: {totalRayCount}");
+            Console.WriteLine($"BVH max depth: {worldBVH.MaxTestCount}");
             Console.WriteLine($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void RenderRow(Image<Rgba32> image, ssBVH<IHitable> wl, Camera cam, int j, int nx, int ny, int ns, ImSoRandom rnd, ref uint rayCount)
+        private static void RenderRow(Image<Rgba32> image, IHitable[] wl, Camera cam, int j, int nx, int ny, int ns, ImSoRandom rnd, ref uint rayCount)
         {
             var index = ny - 1 - j;
             var rowSpan = image.GetPixelRowSpan(index);

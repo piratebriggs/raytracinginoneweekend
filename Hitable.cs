@@ -30,8 +30,9 @@ namespace raytracinginoneweekend
             var tempRec = new HitRecord();
             bool hitAnything = false;
             float closestSoFar = tMax;
-            foreach(var hitable in list)
+            for(uint i = 0; i<list.Length; i++)
             {
+                var hitable = list[i];
                 if (hitable.Hit(r, tMin, closestSoFar, ref tempRec))
                 {
                     hitAnything = true;
