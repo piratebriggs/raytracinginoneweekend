@@ -31,6 +31,8 @@ namespace raytracinginoneweekend.Hitables
         public bool Hit(Ray r, float tMin, float tMax, ref HitRecord rec)
         {
             float t = (k - r.Origin.Z) / r.Direction.Z;
+            if (t < tMin || t > tMax)
+                return false;
             float x = r.Origin.X + t * r.Direction.X;
             float y = r.Origin.Y + t * r.Direction.Y;
             if (x < x0 || x > x1 || y < y0 || y > y1)
