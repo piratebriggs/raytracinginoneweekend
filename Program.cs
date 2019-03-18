@@ -97,10 +97,10 @@ namespace raytracinginoneweekend
         {
             var world = new List<IHitable>();
             world.Add(new Sphere(new Vector3(0, -1000f, 0), 1000, new Lambertian(new ConstantTexture(0.33f, 0.67f, 0.0f))));
-            var red = new Vector3(0.68f, 0.13f, 0.16f);
-            var yellow = new Vector3(1f, 0.74f, 0.13f);
-            var black = new Vector3(0.14f, 0.07f, 0.07f);
-            var white = new Vector3(1f, 1f, 0.9f);
+            var red = new ConstantTexture(0.68f, 0.13f, 0.16f);
+            var yellow = new ConstantTexture(1f, 0.74f, 0.13f);
+            var black = new ConstantTexture(0.14f, 0.07f, 0.07f);
+            var white = new ConstantTexture(1f, 1f, 0.9f);
 
             for (var a = 1f; a <= 5; a += 1f)
             {
@@ -118,15 +118,20 @@ namespace raytracinginoneweekend
                     {
                         colour = red;
                     }
+                    world.Add(new Sphere(center, 0.45f,
+                        new Lambertian(colour)));
                     world.Add(new Sphere(center, 0.5f,
-                        new Metal(colour, 0.5f)));
+                        new Dialectric(1.5f)));
                     counter++;
                 }
             }
 
             var cueCenter = new Vector3(-6, 0.5f, 0);
-            world.Add(new MovingSphere(cueCenter, cueCenter + new Vector3(0.75f * rnd.NextFloat(), 0, 0), 0.0f, 1.0f, 0.5f,
-                new Metal(white, 0.1f)));
+            var cueCenter1 = cueCenter + new Vector3(0.75f * rnd.NextFloat(), 0, 0);
+            world.Add(new MovingSphere(cueCenter, cueCenter1, 0.0f, 1.0f, 0.5f,
+                new Dialectric(1.5f)));
+            world.Add(new MovingSphere(cueCenter, cueCenter1, 0.0f, 1.0f, 0.45f,
+                new Lambertian(white)));
 
             world.Add(new RectXZ(-3,3,-2,2,5,new DiffuseLight(new ConstantTexture(new Vector3(15,15,15)))));
 
