@@ -128,6 +128,8 @@ namespace raytracinginoneweekend
             world.Add(new MovingSphere(cueCenter, cueCenter + new Vector3(0.75f * rnd.NextFloat(), 0, 0), 0.0f, 1.0f, 0.5f,
                 new Metal(white, 0.1f)));
 
+            world.Add(new RectXZ(-3,3,-2,2,5,new DiffuseLight(new ConstantTexture(new Vector3(15,15,15)))));
+
             var lookFrom = new Vector3(-9, 3.5f, 12);
             var lookAt = new Vector3(-3, 0, 0);
             var distToFocus = (lookFrom - new Vector3(-6, 0.5f, 0)).Length();
