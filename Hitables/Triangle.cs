@@ -110,11 +110,8 @@ namespace raytracinginoneweekend.Hitables
             if (Math.Abs(NdotRayDirection) < kEpsilon) // almost 0 
                 return false; // they are parallel so they don't intersect ! 
 
-            // compute d parameter using equation 2
-            float d = Vector3.Dot(Normal, v0);
-
             // compute t (equation 3)
-            var temp = (Vector3.Dot(Normal, r.Origin) + d) / NdotRayDirection;
+            var temp = (-Vector3.Dot(Normal, r.Origin - v0)) / NdotRayDirection;
             // check if the triangle is in behind the ray
             if (temp < 0) return false; // the triangle is behind 
 
