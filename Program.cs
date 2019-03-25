@@ -149,20 +149,36 @@ namespace raytracinginoneweekend
         {
             var world = new List<IHitable>();
 
+            var blue = new Lambertian(new ColourTexture());
             var red = new Lambertian(new ConstantTexture(0.65f, 0.05f, 0.05f));
             var white = new Lambertian(new ConstantTexture(0.73f, 0.73f, 0.73f));
             var green = new Lambertian(new ConstantTexture(0.12f, 0.45f, 0.15f));
             var light = new DiffuseLight(new ConstantTexture(15f, 15f, 15f));
-
+            world.Add(new RectXZ(213, 343, 227, 332, 554, light));
+            
             world.Add(new FlipNormals(new RectYZ(0, 555, 0, 555, 555, green)));
             world.Add(new RectYZ(0, 555, 0, 555, 0, red));
-            world.Add(new RectXZ(213, 343, 227, 332, 554, light));
             world.Add(new FlipNormals(new RectXZ(0, 555, 0, 555, 555, white)));
             world.Add(new RectXZ(0, 555, 0, 555, 0, white));
             world.Add(new FlipNormals(new RectXY(0, 555, 0, 555, 555, white)));
 
-            world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 165, 165), white), new Vector3(130, 0, 65)));
-            world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 330, 165), white), new Vector3(265, 0, 295)));
+            //world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 165, 165), white), new Vector3(130, 0, 65)));
+            //world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 330, 165), white), new Vector3(265, 0, 295)));
+
+            world.Add(new Sphere(new Vector3(0, 0, 0), 3000.0f, new DiffuseLight(new ConstantTexture(new Vector3(1, 1, 1)))));
+            
+            for (int i = 0; i < 50; i++)
+            {
+                var a = rnd.RandomVector();
+                var b = rnd.RandomVector();
+                var c = rnd.RandomVector();
+
+                //world.Add(new Translate(new Triangle(new Vector3(rnd.NextFloat() * 555f, rnd.NextFloat() * 555f, rnd.NextFloat() * 555f), new Vector3(rnd.NextFloat() * 555f, rnd.NextFloat() * 555f, rnd.NextFloat() * 555f), new Vector3(rnd.NextFloat() * 555f, rnd.NextFloat() * 555f, rnd.NextFloat() * 555f), red),new Vector3(10 + rnd.NextFloat() * 100f, 10 + rnd.NextFloat() * 100f, 10 + rnd.NextFloat() * 100f)));
+                world.Add(new Triangle(a, b, c, blue));
+                world.Add(new FlipNormals( new Triangle(a, b, c, blue)));
+            }
+
+            //world.Add(new Translate(new FlipNormals( new Triangle(new Vector3(100, 0, 0), new Vector3(0, 0, 0), new Vector3(100, 0, 100), red)),new Vector3(250, 250, 250)));
 
             var lookFrom = new Vector3(278, 278, -800);
             var lookAt = new Vector3(278, 278, 0);
@@ -178,9 +194,9 @@ namespace raytracinginoneweekend
         static void Main(string[] args)
         {
             var x = new Vector3(0, 0, 0);
-            int nx = 600;
-            int ny = 400;
-            int ns = 10;
+            int nx = 300;
+            int ny = 200;
+            int ns = 100;
             var singleThread = false;
 
             var (world, cam) = CornellScene(new SunsetquestRandom(), nx, ny);

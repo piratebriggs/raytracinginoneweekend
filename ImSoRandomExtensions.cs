@@ -27,5 +27,9 @@ namespace raytracinginoneweekend
             return p;
         }
 
+        public static Vector3 RandomVector(this ImSoRandom random)
+        {
+            return new Vector3(10 + random.NextFloat() * 400f, 10 + random.NextFloat() * 400f, 10 + random.NextFloat() * 400f);
+        }
     }
 }
