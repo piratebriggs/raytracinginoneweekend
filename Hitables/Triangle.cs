@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Numerics;
 using System.Text;
 using raytracinginoneweekend.Materials;
@@ -16,6 +17,7 @@ namespace raytracinginoneweekend.Hitables
         private SSAABB Box;
         private Vector3 Normal;
         private float Denom;
+
 
         public Triangle(Vector3 a, Vector3 b, Vector3 c, Material material)
         {
@@ -41,11 +43,67 @@ namespace raytracinginoneweekend.Hitables
         }
 
         public SSAABB BoundingBox => Box;
-
         public bool Hit(Ray r, float tMin, float tMax, ref HitRecord rec)
         {
+            var mtRec = new HitRecord();
+            var mtResult = Möller_Trumbore(r, tMin, tMax, ref mtRec);
 
-            // Step 1: finding P
+            var origRec = new HitRecord();
+            var origResult = HitOrig(r, tMin, tMax, ref origRec);
+
+            if(mtResult != origResult)
+            {
+                Debugger.Break();
+            }
+
+            if (mtResult)
+            {
+                rec = mtRec;
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool Möller_Trumbore(Ray r, float tMin, float tMax, ref HitRecord rec)
+        {
+            var v0v1 = v1 - v0;
+            var v0v2 = v2 - v0;
+
+            var pvec = Vector3.Cross(r.Direction, v0v2);
+            var det = Vector3.Dot(v0v1, pvec);
+
+            if (det < kEpsilon) // almost 0 
+                return false;  
+
+            float invDet = 1 / det;
+
+            var tvec = r.Origin - v0;
+            var u = Vector3.Dot(tvec, pvec) * invDet;
+            if (u < 0 || u > 1) return false;
+
+            var qvec = Vector3.Cross(tvec, v0v1);
+            var v = Vector3.Dot(r.Direction, qvec) * invDet;
+            if (v < 0 || u + v > 1) return false;
+
+            var temp = Vector3.Dot(v0v2, qvec) * invDet;
+            if (temp >= tMax || temp <= tMin)
+            {
+                return false;
+            }
+
+            rec.T = temp;
+            rec.Normal = Vector3.Normalize(Normal);
+            rec.P = r.PointAtParameter(rec.T);
+            rec.U = u;
+            rec.V = v;
+            rec.Material = Material;
+
+            return true;
+        }
+
+        public bool HitOrig(Ray r, float tMin, float tMax, ref HitRecord rec)
+        {
 
             // check if ray and plane are parallel ?
             float NdotRayDirection = Vector3.Dot(Normal, r.Direction);

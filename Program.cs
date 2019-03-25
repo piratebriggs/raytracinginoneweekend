@@ -149,7 +149,8 @@ namespace raytracinginoneweekend
         {
             var world = new List<IHitable>();
 
-            var blue = new Lambertian(new ColourTexture());
+            var grad = new Lambertian(new ColourTexture());
+            var blue = new Lambertian(new ConstantTexture(0.05f, 0.05f, 0.65f));
             var red = new Lambertian(new ConstantTexture(0.65f, 0.05f, 0.05f));
             var white = new Lambertian(new ConstantTexture(0.73f, 0.73f, 0.73f));
             var green = new Lambertian(new ConstantTexture(0.12f, 0.45f, 0.15f));
@@ -165,8 +166,8 @@ namespace raytracinginoneweekend
             //world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 165, 165), white), new Vector3(130, 0, 65)));
             //world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 330, 165), white), new Vector3(265, 0, 295)));
 
-            world.Add(new Sphere(new Vector3(0, 0, 0), 3000.0f, new DiffuseLight(new ConstantTexture(new Vector3(1, 1, 1)))));
-            
+            //world.Add(new Sphere(new Vector3(0, 0, 0), 3000.0f, new DiffuseLight(new ConstantTexture(new Vector3(1, 1, 1)))));
+            /*
             for (int i = 0; i < 50; i++)
             {
                 var a = rnd.RandomVector();
@@ -177,8 +178,9 @@ namespace raytracinginoneweekend
                 world.Add(new Triangle(a, b, c, blue));
                 world.Add(new FlipNormals( new Triangle(a, b, c, blue)));
             }
-
-            //world.Add(new Translate(new FlipNormals( new Triangle(new Vector3(100, 0, 0), new Vector3(0, 0, 0), new Vector3(100, 0, 100), red)),new Vector3(250, 250, 250)));
+            
+    */
+            world.Add(new Triangle( new Vector3(340, 90, 62),new Vector3(100, 320, 190), new Vector3(262, 331, 400), grad));
 
             var lookFrom = new Vector3(278, 278, -800);
             var lookAt = new Vector3(278, 278, 0);
