@@ -15,6 +15,8 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using ObjLoader.Loader.Loaders;
 using System.IO;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace raytracinginoneweekend
 {
@@ -191,13 +193,13 @@ namespace raytracinginoneweekend
 
             var scaleFactor = new Vector3(50, 50, 50);
             var displacement = new Vector3(555 / 2, 555 / 3, 555 / 2);
-            foreach(var g in result.Groups)
+            foreach (var g in result.Groups)
             {
-                foreach( var f in g.Faces)
+                foreach (var f in g.Faces)
                 {
-                    var v0 = result.Vertices[f[0].VertexIndex-1].ConvertRightHandedToLeftHandedVertex().ToVector3();
-                    var v1 = result.Vertices[f[1].VertexIndex-1].ConvertRightHandedToLeftHandedVertex().ToVector3();
-                    var v2 = result.Vertices[f[2].VertexIndex-1].ConvertRightHandedToLeftHandedVertex().ToVector3();
+                    var v0 = result.Vertices[f[0].VertexIndex - 1].ConvertRightHandedToLeftHandedVertex().ToVector3();
+                    var v1 = result.Vertices[f[1].VertexIndex - 1].ConvertRightHandedToLeftHandedVertex().ToVector3();
+                    var v2 = result.Vertices[f[2].VertexIndex - 1].ConvertRightHandedToLeftHandedVertex().ToVector3();
 
                     world.Add(new Translate(new FlipNormals( new Triangle(v0 * scaleFactor, v1 * scaleFactor, v2 * scaleFactor, grad)), displacement));
 
@@ -228,6 +230,7 @@ namespace raytracinginoneweekend
             var worldBVH = new BVH(world);
             var wl = new IHitable[] { worldBVH };
 
+            var processedRows = new ConcurrentDictionary<int,int>();
 
             uint totalRayCount = 0;
             using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
@@ -238,14 +241,14 @@ namespace raytracinginoneweekend
                     var rnd = new SunsetquestRandom();
                     for (int j = 0; j < ny; j++)
                     {
-                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, ref totalRayCount);
+                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, processedRows, ref totalRayCount);
                     }
                 }
                 else
                 {
                     Parallel.For(0, ny, () => new SunsetquestRandom(), (j, loop, rnd) =>
                     {
-                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, ref totalRayCount);
+                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, processedRows, ref totalRayCount);
                         return rnd;
                     }, (rnd) => { });
                 }
@@ -262,7 +265,7 @@ namespace raytracinginoneweekend
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void RenderRow(Image<Rgba32> image, IHitable[] wl, Camera cam, int j, int nx, int ny, int ns, ImSoRandom rnd, ref uint rayCount)
+        private static void RenderRow(Image<Rgba32> image, IHitable[] wl, Camera cam, int j, int nx, int ny, int ns, ImSoRandom rnd, ConcurrentDictionary<int, int> processedRows, ref uint rayCount)
         {
             var index = ny - 1 - j;
             var rowSpan = image.GetPixelRowSpan(index);
@@ -285,7 +288,9 @@ namespace raytracinginoneweekend
 
                 rowSpan[i] = new Rgba32(col);
             }
-
+            processedRows.TryAdd(j, Thread.CurrentThread.ManagedThreadId);
+            var pcComplete = (float)processedRows.Count() / (float)ny * 100f;
+            Console.WriteLine($"{pcComplete}%");
         }
     }
 }
