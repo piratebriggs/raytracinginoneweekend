@@ -13,6 +13,8 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using ObjLoader.Loader.Loaders;
+using System.IO;
 
 namespace raytracinginoneweekend
 {
@@ -180,7 +182,27 @@ namespace raytracinginoneweekend
             }
             
     */
-            world.Add(new Triangle( new Vector3(340, 90, 62),new Vector3(100, 320, 190), new Vector3(262, 331, 400), grad));
+            //world.Add(new Triangle( new Vector3(340, 90, 62),new Vector3(100, 320, 190), new Vector3(262, 331, 400), grad));
+
+            var objLoaderFactory = new ObjLoaderFactory();
+            var objLoader = objLoaderFactory.Create();
+            var fileStream = new FileStream("../../../SampleObj/teapot.obj", FileMode.Open);
+            var result = objLoader.Load(fileStream);
+
+            var scaleFactor = new Vector3(25, 25, 25);
+            var displacement = new Vector3(555 / 2, 555 / 2, 555 / 2);
+            foreach(var g in result.Groups)
+            {
+                foreach( var f in g.Faces)
+                {
+                    var v0 = result.Vertices[f[0].VertexIndex-1].ToVector3();
+                    var v1 = result.Vertices[f[1].VertexIndex-1].ToVector3();
+                    var v2 = result.Vertices[f[2].VertexIndex-1].ToVector3();
+
+                    world.Add(new Translate(new Triangle(v0 * scaleFactor, v1 * scaleFactor, v2 * scaleFactor, grad), displacement));
+
+                }
+            }
 
             var lookFrom = new Vector3(278, 278, -800);
             var lookAt = new Vector3(278, 278, 0);

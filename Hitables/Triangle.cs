@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using raytracinginoneweekend.Materials;
 using SimpleScene;
@@ -45,9 +46,11 @@ namespace raytracinginoneweekend.Hitables
         public SSAABB BoundingBox => Box;
         public bool Hit(Ray r, float tMin, float tMax, ref HitRecord rec)
         {
+
             var mtRec = new HitRecord();
             var mtResult = Möller_Trumbore(r, tMin, tMax, ref mtRec);
 
+            /*
             var origRec = new HitRecord();
             var origResult = HitOrig(r, tMin, tMax, ref origRec);
 
@@ -55,7 +58,7 @@ namespace raytracinginoneweekend.Hitables
             {
                 Debugger.Break();
             }
-
+            */
             if (mtResult)
             {
                 rec = mtRec;
@@ -65,6 +68,7 @@ namespace raytracinginoneweekend.Hitables
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Möller_Trumbore(Ray r, float tMin, float tMax, ref HitRecord rec)
         {
             var v0v1 = v1 - v0;
