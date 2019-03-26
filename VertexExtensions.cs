@@ -12,5 +12,10 @@ namespace raytracinginoneweekend
         {
             return new Vector3(v.X, v.Y, v.Z);
         }
+
+        public static Vertex ConvertRightHandedToLeftHandedVertex(this Vertex v)
+        {
+            return new Vertex(v.X, v.Y, -v.Z);
+        }
     }
 }

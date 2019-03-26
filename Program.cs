@@ -189,17 +189,17 @@ namespace raytracinginoneweekend
             var fileStream = new FileStream("../../../SampleObj/teapot.obj", FileMode.Open);
             var result = objLoader.Load(fileStream);
 
-            var scaleFactor = new Vector3(25, 25, 25);
-            var displacement = new Vector3(555 / 2, 555 / 2, 555 / 2);
+            var scaleFactor = new Vector3(50, 50, 50);
+            var displacement = new Vector3(555 / 2, 555 / 3, 555 / 2);
             foreach(var g in result.Groups)
             {
                 foreach( var f in g.Faces)
                 {
-                    var v0 = result.Vertices[f[0].VertexIndex-1].ToVector3();
-                    var v1 = result.Vertices[f[1].VertexIndex-1].ToVector3();
-                    var v2 = result.Vertices[f[2].VertexIndex-1].ToVector3();
+                    var v0 = result.Vertices[f[0].VertexIndex-1].ConvertRightHandedToLeftHandedVertex().ToVector3();
+                    var v1 = result.Vertices[f[1].VertexIndex-1].ConvertRightHandedToLeftHandedVertex().ToVector3();
+                    var v2 = result.Vertices[f[2].VertexIndex-1].ConvertRightHandedToLeftHandedVertex().ToVector3();
 
-                    world.Add(new Translate(new Triangle(v0 * scaleFactor, v1 * scaleFactor, v2 * scaleFactor, grad), displacement));
+                    world.Add(new Translate(new FlipNormals( new Triangle(v0 * scaleFactor, v1 * scaleFactor, v2 * scaleFactor, grad)), displacement));
 
                 }
             }
