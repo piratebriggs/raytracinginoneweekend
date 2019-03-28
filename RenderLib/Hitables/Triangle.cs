@@ -16,7 +16,7 @@ namespace raytracinginoneweekend.Hitables
         private Vector3 v0, v1, v2;
         private Material Material;
         private SSAABB Box;
-        private Vector3 Normal;
+        public Vector3 Normal;
         private float Denom;
 
 
