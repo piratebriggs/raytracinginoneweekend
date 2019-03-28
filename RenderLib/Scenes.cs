@@ -1,53 +1,21 @@
-﻿using raytracinginoneweekend.Hitables;
+﻿using ObjLoader.Loader.Loaders;
+using raytracinginoneweekend;
+using raytracinginoneweekend.Hitables;
 using raytracinginoneweekend.Materials;
 using raytracinginoneweekend.Textures;
-using SimpleScene;
-using SimpleScene.Util.ssBVH;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using ObjLoader.Loader.Loaders;
 using System.IO;
-using System.Collections.Concurrent;
-using System.Threading;
+using System.Numerics;
+using System.Text;
 
-namespace raytracinginoneweekend
+namespace RenderLib
 {
+    public class Scenes
 
-    class Program
     {
-        public static Stopwatch sw = new Stopwatch();
 
-        static Vector3 Color(Ray r, IHitable[] world, int depth, ImSoRandom rnd, ref uint rayCount)
-        {
-            rayCount++;
-
-            var rec = new HitRecord();
-            if(world.Hit(r,0.001f,float.MaxValue,ref rec))
-            {
-                Ray scattered;
-                Vector3 attenuation;
-                var emitted = rec.Material.Emitted(0, 0, ref rec.P);
-                if (depth < 50 && rec.Material.Scatter(r, rec, out attenuation, out scattered, rnd))
-                {
-                    return emitted + attenuation * Color(scattered, world, depth + 1, rnd, ref rayCount);
-                }
-                else
-                {
-                    return emitted;
-                }
-            }
-            return Vector3.Zero;
-        }
-
-        private static (List<IHitable>, Camera) RandomScene(ImSoRandom rnd, int nx, int ny)
+        public static (List<IHitable>, Camera) RandomScene(ImSoRandom rnd, int nx, int ny)
         {
             var world = new List<IHitable>();
 
@@ -84,7 +52,7 @@ namespace raytracinginoneweekend
             world.Add(new Sphere(new Vector3(-4, 1, 0), 1.0f, new Lambertian(new ConstantTexture(0.4f, 0.2f, 0.1f))));
             world.Add(new Sphere(new Vector3(4, 1, 0), 1.0f, new Metal(new Vector3(0.7f, 0.6f, 0.5f), 0f)));
 
-            world.Add(new Sphere(new Vector3(0, 0, 0), 20.0f, new DiffuseLight(new ConstantTexture(new Vector3(1,1,1)))));
+            world.Add(new Sphere(new Vector3(0, 0, 0), 20.0f, new DiffuseLight(new ConstantTexture(new Vector3(1, 1, 1)))));
 
 
             var lookFrom = new Vector3(13, 2, 3);
@@ -97,7 +65,7 @@ namespace raytracinginoneweekend
             return (world, cam);
         }
 
-        private static (List<IHitable>, Camera) PoolScene(ImSoRandom rnd, int nx, int ny)
+        public static (List<IHitable>, Camera) PoolScene(ImSoRandom rnd, int nx, int ny)
         {
             var world = new List<IHitable>();
             world.Add(new Sphere(new Vector3(0, -1000f, 0), 1000, new Lambertian(new ConstantTexture(0.33f, 0.67f, 0.0f))));
@@ -116,9 +84,12 @@ namespace raytracinginoneweekend
                     if (a == 3 && b == 1)
                     {
                         colour = black;
-                    } if (a == 3 && b == 2) {
+                    }
+                    if (a == 3 && b == 2)
+                    {
                         colour = red;
-                    } if (a == 5 && b == 4)
+                    }
+                    if (a == 5 && b == 4)
                     {
                         colour = red;
                     }
@@ -137,7 +108,7 @@ namespace raytracinginoneweekend
             world.Add(new MovingSphere(cueCenter, cueCenter1, 0.0f, 1.0f, 0.45f,
                 new Lambertian(white)));
 
-            world.Add(new RectXZ(-3,3,-2,2,5,new DiffuseLight(new ConstantTexture(new Vector3(15,15,15)))));
+            world.Add(new RectXZ(-3, 3, -2, 2, 5, new DiffuseLight(new ConstantTexture(new Vector3(15, 15, 15)))));
 
             var lookFrom = new Vector3(-9, 3.5f, 12);
             var lookAt = new Vector3(-3, 0, 0);
@@ -149,7 +120,7 @@ namespace raytracinginoneweekend
             return (world, cam);
         }
 
-        private static (List<IHitable>, Camera) CornellScene(ImSoRandom rnd, int nx, int ny)
+        public static (List<IHitable>, Camera) CornellScene(ImSoRandom rnd, int nx, int ny)
         {
             var world = new List<IHitable>();
 
@@ -160,15 +131,15 @@ namespace raytracinginoneweekend
             var green = new Lambertian(new ConstantTexture(0.12f, 0.45f, 0.15f));
             var light = new DiffuseLight(new ConstantTexture(15f, 15f, 15f));
             var glass = new Dialectric(1.5f);
-            
+
             world.Add(new RectXZ(213, 343, 227, 332, 554, light));
-            
+
             world.Add(new FlipNormals(new RectYZ(0, 555, 0, 555, 555, green)));
             world.Add(new RectYZ(0, 555, 0, 555, 0, red));
             world.Add(new FlipNormals(new RectXZ(0, 555, 0, 555, 555, white)));
             world.Add(new RectXZ(0, 555, 0, 555, 0, white));
             world.Add(new FlipNormals(new RectXY(0, 555, 0, 555, 555, white)));
-            
+
             //world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 165, 165), white), new Vector3(130, 0, 65)));
             //world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 330, 165), white), new Vector3(265, 0, 295)));
 
@@ -189,18 +160,18 @@ namespace raytracinginoneweekend
 
             var objLoaderFactory = new ObjLoaderFactory();
             var objLoader = objLoaderFactory.Create();
-            var fileStream = new FileStream("../../../SampleObj/teapot.obj", FileMode.Open);
+            var fileStream = new FileStream("../../../../SampleObj/teapot.obj", FileMode.Open);
             var obj = objLoader.Load(fileStream);
             var objBox = obj.GetBoundingBox();
             var centerOffset = objBox.Center();
             var height = objBox.Max.Y - objBox.Min.Y;
-            
+
             var scaleFactor = new Vector3(50, 50, 50); // scale obj to wold space
             var displacement = new Vector3(555f / 2, height / 2f * scaleFactor.Y, 555f / 3 * 2);
             var glossScaleFactor = new Vector3(0.5f, 0.5f, 0.5f);   // scale the unit vector normal
             foreach (var g in obj.Groups)
             {
-                foreach( var f in g.Faces)
+                foreach (var f in g.Faces)
                 {
                     // Verticies have their origin set to the center of the bounding box
                     var v0 = obj.Vertices[f[0].VertexIndex - 1].ToVector3() - centerOffset;
@@ -219,7 +190,7 @@ namespace raytracinginoneweekend
 
             var lookFrom = new Vector3(278, 278, -800);
             var lookAt = new Vector3(278, 278, 0);
-            var distToFocus = (lookFrom-lookAt).Length() - scaleFactor.Length()/2;
+            var distToFocus = (lookFrom - lookAt).Length() - scaleFactor.Length() / 2;
             var aperture = 0.1f;
             var vFov = 40;
 
@@ -228,80 +199,6 @@ namespace raytracinginoneweekend
             return (world, cam);
         }
 
-        static void Main(string[] args)
-        {
-            var x = new Vector3(0, 0, 0);
-            int nx = 300;
-            int ny = 300;
-            int ns = 50;
-            var singleThread = false;
 
-            var (world, cam) = CornellScene(new SunsetquestRandom(), nx, ny);
-
-            var worldBVH = new BVH(world);
-            var wl = new IHitable[] { worldBVH };
-
-            var processedRows = new ConcurrentDictionary<int,int>();
-
-            uint totalRayCount = 0;
-            using (Image<Rgba32> image = new Image<Rgba32>(nx, ny))
-            {
-                sw.Start();
-                if(singleThread)
-                {
-                    var rnd = new SunsetquestRandom();
-                    for (int j = 0; j < ny; j++)
-                    {
-                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, processedRows, ref totalRayCount);
-                    }
-                }
-                else
-                {
-                    Parallel.For(0, ny, () => new SunsetquestRandom(), (j, loop, rnd) =>
-                    {
-                        RenderRow(image, wl, cam, j, nx, ny, ns, rnd, processedRows, ref totalRayCount);
-                        return rnd;
-                    }, (rnd) => { });
-                }
-                sw.Stop();
-                image.Save("test.png");
-            }
-            float seconds = sw.ElapsedMilliseconds / 1000f;
-            float rate = totalRayCount / seconds;
-            float mRate = rate / 1_000_000;
-
-            Console.WriteLine($"totalRayCount: {totalRayCount}");
-            Console.WriteLine($"BVH max depth: {worldBVH.MaxTestCount}");
-            Console.WriteLine($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void RenderRow(Image<Rgba32> image, IHitable[] wl, Camera cam, int j, int nx, int ny, int ns, ImSoRandom rnd, ConcurrentDictionary<int, int> processedRows, ref uint rayCount)
-        {
-            var index = ny - 1 - j;
-            var rowSpan = image.GetPixelRowSpan(index);
-
-            for (int i = 0; i < nx; i++)
-            {
-                var col = new Vector3(0);
-
-                for (var s = 0; s < ns; s++)
-                {
-                    float u = ((float)i + rnd.NextFloat()) / (float)nx;
-                    float v = ((float)j + rnd.NextFloat()) / (float)ny;
-                    var r = cam.GetRay(u, v, rnd);
-                    col += Color(r, wl, 0, rnd, ref rayCount);
-
-                }
-
-                col /= (float)ns;
-                col = new Vector3((float)Math.Sqrt(col.X), (float)Math.Sqrt(col.Y), (float)Math.Sqrt(col.Z));
-
-                rowSpan[i] = new Rgba32(col);
-            }
-            processedRows.TryAdd(j, Thread.CurrentThread.ManagedThreadId);
-            var pcComplete = (float)processedRows.Count() / (float)ny * 100f;
-            Console.WriteLine($"{pcComplete}%");
-        }
     }
 }
