@@ -159,6 +159,8 @@ namespace raytracinginoneweekend
             var white = new Lambertian(new ConstantTexture(0.73f, 0.73f, 0.73f));
             var green = new Lambertian(new ConstantTexture(0.12f, 0.45f, 0.15f));
             var light = new DiffuseLight(new ConstantTexture(15f, 15f, 15f));
+            var glass = new Dialectric(1.5f);
+            
             world.Add(new RectXZ(213, 343, 227, 332, 554, light));
             
             world.Add(new FlipNormals(new RectYZ(0, 555, 0, 555, 555, green)));
@@ -166,7 +168,7 @@ namespace raytracinginoneweekend
             world.Add(new FlipNormals(new RectXZ(0, 555, 0, 555, 555, white)));
             world.Add(new RectXZ(0, 555, 0, 555, 0, white));
             world.Add(new FlipNormals(new RectXY(0, 555, 0, 555, 555, white)));
-
+            
             //world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 165, 165), white), new Vector3(130, 0, 65)));
             //world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 330, 165), white), new Vector3(265, 0, 295)));
 
@@ -180,7 +182,6 @@ namespace raytracinginoneweekend
 
                 //world.Add(new Translate(new Triangle(new Vector3(rnd.NextFloat() * 555f, rnd.NextFloat() * 555f, rnd.NextFloat() * 555f), new Vector3(rnd.NextFloat() * 555f, rnd.NextFloat() * 555f, rnd.NextFloat() * 555f), new Vector3(rnd.NextFloat() * 555f, rnd.NextFloat() * 555f, rnd.NextFloat() * 555f), red),new Vector3(10 + rnd.NextFloat() * 100f, 10 + rnd.NextFloat() * 100f, 10 + rnd.NextFloat() * 100f)));
                 world.Add(new Triangle(a, b, c, blue));
-                world.Add(new FlipNormals( new Triangle(a, b, c, blue)));
             }
             
     */
@@ -189,26 +190,36 @@ namespace raytracinginoneweekend
             var objLoaderFactory = new ObjLoaderFactory();
             var objLoader = objLoaderFactory.Create();
             var fileStream = new FileStream("../../../SampleObj/teapot.obj", FileMode.Open);
-            var result = objLoader.Load(fileStream);
-
-            var scaleFactor = new Vector3(50, 50, 50);
-            var displacement = new Vector3(555 / 2, 555 / 3, 555 / 2);
-            foreach (var g in result.Groups)
+            var obj = objLoader.Load(fileStream);
+            var objBox = obj.GetBoundingBox();
+            var centerOffset = objBox.Center();
+            var height = objBox.Max.Y - objBox.Min.Y;
+            
+            var scaleFactor = new Vector3(50, 50, 50); // scale obj to wold space
+            var displacement = new Vector3(555f / 2, height / 2f * scaleFactor.Y, 555f / 3 * 2);
+            var glossScaleFactor = new Vector3(0.5f, 0.5f, 0.5f);   // scale the unit vector normal
+            foreach (var g in obj.Groups)
             {
-                foreach (var f in g.Faces)
+                foreach( var f in g.Faces)
                 {
-                    var v0 = result.Vertices[f[0].VertexIndex - 1].ConvertRightHandedToLeftHandedVertex().ToVector3();
-                    var v1 = result.Vertices[f[1].VertexIndex - 1].ConvertRightHandedToLeftHandedVertex().ToVector3();
-                    var v2 = result.Vertices[f[2].VertexIndex - 1].ConvertRightHandedToLeftHandedVertex().ToVector3();
+                    // Verticies have their origin set to the center of the bounding box
+                    var v0 = obj.Vertices[f[0].VertexIndex - 1].ToVector3() - centerOffset;
+                    var v1 = obj.Vertices[f[1].VertexIndex - 1].ToVector3() - centerOffset;
+                    var v2 = obj.Vertices[f[2].VertexIndex - 1].ToVector3() - centerOffset;
 
-                    world.Add(new Translate(new FlipNormals( new Triangle(v0 * scaleFactor, v1 * scaleFactor, v2 * scaleFactor, grad)), displacement));
+                    var t = new Triangle(v0 * scaleFactor, v1 * scaleFactor, v2 * scaleFactor, glass);
 
+                    // add Dialectric
+                    world.Add(new Translate(t, displacement));
+
+                    // add Lambertian. translated toward obj center by glossScaleFactor of a unit vector
+                    world.Add(new Translate(new Triangle(v0 * scaleFactor, v1 * scaleFactor, v2 * scaleFactor, white), displacement - Vector3.Normalize(t.Normal)));
                 }
             }
 
             var lookFrom = new Vector3(278, 278, -800);
             var lookAt = new Vector3(278, 278, 0);
-            var distToFocus = 10;
+            var distToFocus = (lookFrom-lookAt).Length() - scaleFactor.Length()/2;
             var aperture = 0.1f;
             var vFov = 40;
 
@@ -221,8 +232,8 @@ namespace raytracinginoneweekend
         {
             var x = new Vector3(0, 0, 0);
             int nx = 300;
-            int ny = 200;
-            int ns = 100;
+            int ny = 300;
+            int ns = 50;
             var singleThread = false;
 
             var (world, cam) = CornellScene(new SunsetquestRandom(), nx, ny);
