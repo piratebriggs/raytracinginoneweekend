@@ -28,7 +28,7 @@ namespace ServerlessTracing
             var worldBVH = new BVH(world);
             var wl = new IHitable[] { worldBVH };
 
-            var pathTracer = new PathTracer(nx, ny, ns, true);
+            var pathTracer = new PathTracer(nx, ny, ns, false);
             uint totalRayCount = 0;
             var sw = Stopwatch.StartNew();
             var image = pathTracer.RenderScene(wl, cam, ref totalRayCount, (pcComplete => log.Info($"{pcComplete}%")));
