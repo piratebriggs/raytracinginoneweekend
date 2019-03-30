@@ -3,11 +3,9 @@ using raytracinginoneweekend;
 using raytracinginoneweekend.Hitables;
 using raytracinginoneweekend.Materials;
 using raytracinginoneweekend.Textures;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
-using System.Text;
 
 namespace RenderLib
 {
@@ -120,7 +118,7 @@ namespace RenderLib
             return (world, cam);
         }
 
-        public static (List<IHitable>, Camera) CornellScene(ImSoRandom rnd, int nx, int ny)
+        public static (List<IHitable>, Camera) CornellScene(string objPath, ImSoRandom rnd, int nx, int ny)
         {
             var world = new List<IHitable>();
 
@@ -160,7 +158,7 @@ namespace RenderLib
 
             var objLoaderFactory = new ObjLoaderFactory();
             var objLoader = objLoaderFactory.Create();
-            var fileStream = new FileStream("../../../../SampleObj/teapot.obj", FileMode.Open);
+            var fileStream = new FileStream(objPath, FileMode.Open);
             var obj = objLoader.Load(fileStream);
             var objBox = obj.GetBoundingBox();
             var centerOffset = objBox.Center();

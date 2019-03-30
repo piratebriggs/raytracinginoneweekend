@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -23,7 +25,14 @@ namespace ServerlessTracing
             int ny = 300;
             int ns = 50;
 
-            var (world, cam) = Scenes.CornellScene(new SunsetquestRandom(), nx, ny);
+            string path = (new System.Uri(Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath;
+            path = Path.GetFullPath(path);
+            path = Path.GetDirectoryName(path);
+            path += @"\..\teapot.obj";
+
+            log.Info($"Obj path: {path}");
+
+            var (world, cam) = Scenes.CornellScene(path, new SunsetquestRandom(), nx, ny);
 
             var worldBVH = new BVH(world);
             var wl = new IHitable[] { worldBVH };

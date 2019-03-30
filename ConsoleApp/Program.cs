@@ -14,10 +14,10 @@ namespace raytracinginoneweekend
         static void Main(string[] args)
         {
             int nx = 300;
-            int ny = 150;
+            int ny = 300;
             int ns = 50;
 
-            var (world, cam) = Scenes.CornellScene(new SunsetquestRandom(), nx, ny);
+            var (world, cam) = Scenes.CornellScene("../../../../SampleObj/teapot.obj", new SunsetquestRandom(), nx, ny);
 
             var worldBVH = new BVH(world);
             var wl = new IHitable[] { worldBVH };
