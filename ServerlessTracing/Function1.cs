@@ -11,6 +11,7 @@ using raytracinginoneweekend.Hitables;
 using RenderLib;
 using SixLabors.ImageSharp;
 
+
 namespace ServerlessTracing
 {
     public static class Function1

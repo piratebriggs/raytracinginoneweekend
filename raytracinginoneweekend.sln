@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "raytracinginoneweekend", "C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerlessTracing", "ServerlessTracing\ServerlessTracing.csproj", "{D0DD4CFA-00A5-4062-AEBF-F2F78175A84B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RenderLib", "RenderLib\RenderLib.csproj", "{21E276FF-D200-4763-B452-E5B6D837F273}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RenderLib", "RenderLib\RenderLib.csproj", "{21E276FF-D200-4763-B452-E5B6D837F273}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
