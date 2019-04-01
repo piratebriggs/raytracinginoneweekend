@@ -158,7 +158,7 @@ namespace RenderLib
 
             var objLoaderFactory = new ObjLoaderFactory();
             var objLoader = objLoaderFactory.Create();
-            var fileStream = new FileStream(objPath, FileMode.Open);
+            var fileStream = new FileStream(objPath, FileMode.Open, FileAccess.Read, FileShare.Read );
             var obj = objLoader.Load(fileStream);
             var objBox = obj.GetBoundingBox();
             var centerOffset = objBox.Center();

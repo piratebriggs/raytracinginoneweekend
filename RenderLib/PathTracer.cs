@@ -76,7 +76,7 @@ namespace RenderLib
             processedRows.TryAdd(j, Thread.CurrentThread.ManagedThreadId);
         }
 
-        public Image<Rgba32> RenderScene(IHitable[] world, Camera cam, ref uint totalRayCount, Action<float> progressCallback)
+        public Image<Rgba32> RenderScene(IHitable[] world, Camera cam, ref uint totalRayCount, Action<float> progressCallback, int startRow = 0, int? endRow = null)
         {
             var processedRows = new ConcurrentDictionary<int, int>();
 
@@ -84,21 +84,26 @@ namespace RenderLib
 
             Image<Rgba32> image = new Image<Rgba32>(nx, ny);
 
+            if(!endRow.HasValue)
+            {
+                endRow = ny;
+            }
+
             if (singleThread)
             {
                 var rnd = new SunsetquestRandom();
-                for (int j = 0; j < ny; j++)
+                for (int j = startRow; j < endRow; j++)
                 {
                     RenderRow(image, world, cam, j, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
-                    progressCallback(processedRows.Count / (float)ny * 100f);
+                    progressCallback(processedRows.Count / (float)(endRow-startRow) * 100f);
                 }
             }
             else
             {
-                Parallel.For(0, ny, () => new SunsetquestRandom(), (j, loop, rnd) =>
+                Parallel.For(startRow, endRow.Value, () => new SunsetquestRandom(), (j, loop, rnd) =>
                 {
                     RenderRow(image, world, cam, j, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
-                    progressCallback(processedRows.Count / (float)ny * 100f);
+                    progressCallback(processedRows.Count / (float)(endRow - startRow) * 100f);
 
                     return rnd;
                 }, (rnd) => { });
