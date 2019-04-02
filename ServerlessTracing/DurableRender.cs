@@ -22,8 +22,8 @@ namespace ServerlessTracing
 {
     public static class DurableRender
     {
-        static int nx = 300;
-        static int ny = 300;
+        static int nx = 50;
+        static int ny = 50;
         static int ns = 50;
 
         [FunctionName("DurableRender")]
@@ -55,35 +55,43 @@ namespace ServerlessTracing
         [FunctionName("DurableRender_AssembleImage")]
         public static async Task AssembleImage(
             [ActivityTrigger] object ignore,
-            [Blob("rows")] CloudBlobDirectory directory,
-            [Blob("output/{sys.utcnow}.png", FileAccess.Write)] Stream outputStream,
+            [Blob("rows/{instanceId}")] CloudBlobDirectory directory,
+            [Blob("output/{instanceId}.png", FileAccess.Write)] Stream outputStream,
             ILogger log)
         {
+            var list = directory.ListBlobsAsync();
+            log.LogInformation("Number of blobs: %d", list.Result.Count);
+
             var x = directory.GetBlobReference("1.png");
+            log.LogInformation("Blob 1 length: %d", x.Properties.Length);
+
+            var image = new Image<Rgba32>(nx, ny);
+            image.SaveAsPng(outputStream);
         }
 
         [FunctionName("DurableRender_RenderRow")]
-        public static (uint,TimeSpan) RenderRow([ActivityTrigger] int row, 
-            [Blob("rows/{row}.png", FileAccess.Write)] Stream outStream,
+        public static (uint,TimeSpan, TimeSpan) RenderRow([ActivityTrigger] int row, 
+            [Blob("rows/{instanceId}/{row}.png", FileAccess.Write)] Stream outStream,
             ILogger log)
         {
+            // Super temporary way to find local teapot obj
+            var swInit = Stopwatch.StartNew();
             string path = (new System.Uri(Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath;
             path = Path.GetFullPath(path);
             path = Path.GetDirectoryName(path);
             path = path.Replace("%20", " ");
             path += @"\..\teapot.obj";
-
             //log.LogInformation($"Obj path: {path}");
 
             var (world, cam) = Scenes.CornellScene(path, new SunsetquestRandom(), nx, ny);
 
             var worldBVH = new BVH(world);
             var wl = new IHitable[] { worldBVH };
-
+            swInit.Stop();
             var pathTracer = new PathTracer(nx, ny, ns, true);
             uint totalRayCount = 0;
             var sw = Stopwatch.StartNew();
-            var image = pathTracer.RenderScene(wl, cam, ref totalRayCount, (pcComplete => log.LogInformation($"{pcComplete}%")), row, row+1);
+            var image = pathTracer.RenderScene(wl, cam, ref totalRayCount, (pcComplete => log.LogInformation($"{pcComplete}%")), row, row);
             sw.Stop();
             image.SaveAsPng(outStream);
 
@@ -99,7 +107,7 @@ namespace ServerlessTracing
             log.LogInformation($"C# Queue trigger function processed: ");
             */
 
-            return (totalRayCount, sw.Elapsed);
+            return (totalRayCount, sw.Elapsed, swInit.Elapsed);
         }
 
 

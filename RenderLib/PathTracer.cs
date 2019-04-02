@@ -50,11 +50,8 @@ namespace RenderLib
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void RenderRow(Image<Rgba32> image, IHitable[] wl, Camera cam, int j, int nx, int ny, int ns, ImSoRandom rnd, ConcurrentDictionary<int, int> processedRows, ref uint rayCount)
+        private static void RenderRow(Span<Rgba32> rowSpan, IHitable[] wl, Camera cam, int j, int nx, int ny, int ns, ImSoRandom rnd, ConcurrentDictionary<int, int> processedRows, ref uint rayCount)
         {
-            var index = ny - 1 - j;
-            var rowSpan = image.GetPixelRowSpan(index);
-
             for (int i = 0; i < nx; i++)
             {
                 var col = new Vector3(0);
@@ -76,34 +73,52 @@ namespace RenderLib
             processedRows.TryAdd(j, Thread.CurrentThread.ManagedThreadId);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="world"></param>
+        /// <param name="cam"></param>
+        /// <param name="totalRayCount"></param>
+        /// <param name="progressCallback"></param>
+        /// <param name="startRow">0-indexed row number</param>
+        /// <param name="endRow">0-indexed row number</param>
+        /// <returns></returns>
         public Image<Rgba32> RenderScene(IHitable[] world, Camera cam, ref uint totalRayCount, Action<float> progressCallback, int startRow = 0, int? endRow = null)
         {
             var processedRows = new ConcurrentDictionary<int, int>();
 
             uint tmpTotalRayCount = 0;
 
-            Image<Rgba32> image = new Image<Rgba32>(nx, ny);
-
-            if(!endRow.HasValue)
+            if (!endRow.HasValue)
             {
-                endRow = ny;
+                endRow = ny - 1;
             }
+
+            var numRows = endRow.Value - startRow + 1;
+
+            Image<Rgba32> image = new Image<Rgba32>(nx, numRows);
 
             if (singleThread)
             {
                 var rnd = new SunsetquestRandom();
-                for (int j = startRow; j < endRow; j++)
+                for (int j = startRow; j <= endRow; j++)
                 {
-                    RenderRow(image, world, cam, j, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
-                    progressCallback(processedRows.Count / (float)(endRow-startRow) * 100f);
+                    var index = numRows - 1 - (j - startRow);
+                    var rowSpan = image.GetPixelRowSpan(index);
+
+                    RenderRow(rowSpan, world, cam, j, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
+                    progressCallback(processedRows.Count / (float)numRows * 100f);
                 }
             }
             else
             {
                 Parallel.For(startRow, endRow.Value, () => new SunsetquestRandom(), (j, loop, rnd) =>
                 {
-                    RenderRow(image, world, cam, j, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
-                    progressCallback(processedRows.Count / (float)(endRow - startRow) * 100f);
+                    var index = numRows - 1 - (j - startRow);
+                    var rowSpan = image.GetPixelRowSpan(index);
+
+                    RenderRow(rowSpan, world, cam, j, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
+                    progressCallback(processedRows.Count / (float)numRows * 100f);
 
                     return rnd;
                 }, (rnd) => { });
