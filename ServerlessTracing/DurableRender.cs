@@ -17,24 +17,26 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Advanced;
 using System;
 using Microsoft.WindowsAzure.Storage.Blob;
+using System.Linq;
 
 namespace ServerlessTracing
 {
     public static class DurableRender
     {
-        static int nx = 50;
-        static int ny = 50;
-        static int ns = 50;
+        static int nx = 300;
+        static int ny = 300;
+        static int ns = 5000;
 
         [FunctionName("DurableRender")]
         public static async Task<int> RunOrchestrator(
-            [OrchestrationTrigger] DurableOrchestrationContext context)
+            [OrchestrationTrigger] DurableOrchestrationContext context,
+            ILogger log)
         {
  
-            var tasks = new Task<(uint, TimeSpan)>[ny];
+            var tasks = new Task<(uint, TimeSpan, TimeSpan)>[ny];
             for (int i = 0; i < ny; i++)
             {
-                tasks[i] = context.CallActivityAsync<(uint, TimeSpan)>(
+                tasks[i] = context.CallActivityAsync<(uint, TimeSpan, TimeSpan)>(
                     "DurableRender_RenderRow",
                     i);
             }
@@ -46,8 +48,24 @@ namespace ServerlessTracing
                 null
                 );
 
+            uint totalRayCount= 0;
+            TimeSpan renderTimespan = new TimeSpan();
+            TimeSpan sceneGenTimespan = new TimeSpan();
+            foreach(var task in tasks)
+            {
+                totalRayCount += task.Result.Item1;
+                renderTimespan += task.Result.Item2;
+                sceneGenTimespan += task.Result.Item3;
+            }
+            float seconds = renderTimespan.Milliseconds / 1000f;
+            float rate = totalRayCount / seconds;
+            float mRate = rate / 1_000_000;
 
-            //long totalBytes = tasks.Sum(t => t.Result);
+            log.LogInformation($"totalRayCount: {totalRayCount}");
+            //log.LogInformation($"BVH max depth: {worldBVH.MaxTestCount}");
+            log.LogInformation($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
+            log.LogInformation($"Scene Generation Duration: {sceneGenTimespan.Milliseconds}ms.");
+
             return 0;
         }
 
@@ -60,13 +78,45 @@ namespace ServerlessTracing
             ILogger log)
         {
             var list = directory.ListBlobsAsync();
-            log.LogInformation("Number of blobs: %d", list.Result.Count);
-
-            var x = directory.GetBlobReference("1.png");
-            log.LogInformation("Blob 1 length: %d", x.Properties.Length);
+            log.LogInformation("Number of blobs: {0}", list.Result.Count);
 
             var image = new Image<Rgba32>(nx, ny);
+
+            var tasks = new List<Task>();
+
+            foreach (var item in list.Result)
+            {
+                if (item.GetType() == typeof(CloudBlockBlob))
+                {
+                    var blob = (CloudBlockBlob)item;
+
+                    if(!int.TryParse(blob.Name.Split('/')[1].Split('.')[0], out var rowNumber))
+                    {
+                        throw new InvalidDataException("Unable to parse row number: " + blob.Name);
+                    }
+
+                    var ms = new MemoryStream();
+                    var downloadTask = blob.DownloadToStreamAsync(ms)
+                        .ContinueWith(laa => CopyRow(ms, image, rowNumber));
+                    tasks.Add(downloadTask);
+                }
+            }
+            Task.WaitAll(tasks.ToArray());
+
             image.SaveAsPng(outputStream);
+        }
+
+        public static void CopyRow(Stream source, Image<Rgba32> destination, int destinationRow)
+        {
+            source.Seek(0, SeekOrigin.Begin);
+
+            var rowImage = Image.Load(source);
+            var sourceRow = rowImage.GetPixelRowSpan<Rgba32>(0);
+
+            var rowIndex = ny - 1 - destinationRow;
+            var destRow = destination.GetPixelRowSpan(rowIndex);
+
+            sourceRow.CopyTo(destRow);
         }
 
         [FunctionName("DurableRender_RenderRow")]
@@ -95,11 +145,11 @@ namespace ServerlessTracing
             sw.Stop();
             image.SaveAsPng(outStream);
 
+            /*
             float seconds = sw.ElapsedMilliseconds / 1000f;
             float rate = totalRayCount / seconds;
             float mRate = rate / 1_000_000;
 
-            /*
             log.LogInformation($"totalRayCount: {totalRayCount}");
             log.LogInformation($"BVH max depth: {worldBVH.MaxTestCount}");
             log.LogInformation($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
