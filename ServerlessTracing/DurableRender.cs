@@ -69,6 +69,46 @@ namespace ServerlessTracing
             return 0;
         }
 
+        [FunctionName("DurableRender_RenderRow")]
+        public static (uint, TimeSpan, TimeSpan) RenderRow([ActivityTrigger] int row,
+    [Blob("rows/{instanceId}/{row}.png", FileAccess.Write)] Stream outStream,
+    ILogger log)
+        {
+            // Super temporary way to find local teapot obj
+            var swInit = Stopwatch.StartNew();
+            string path = (new System.Uri(Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath;
+            path = Path.GetFullPath(path);
+            path = Path.GetDirectoryName(path);
+            path = path.Replace("%20", " ");
+            path += @"\..\teapot.obj";
+            //log.LogInformation($"Obj path: {path}");
+
+            var (world, cam) = Scenes.CornellScene(path, new SunsetquestRandom(), nx, ny);
+
+            var worldBVH = new BVH(world);
+            var wl = new IHitable[] { worldBVH };
+            swInit.Stop();
+            var pathTracer = new PathTracer(nx, ny, ns, true);
+            uint totalRayCount = 0;
+            var sw = Stopwatch.StartNew();
+            var image = pathTracer.RenderScene(wl, cam, ref totalRayCount, (pcComplete => log.LogInformation($"{pcComplete}%")), row, row);
+            sw.Stop();
+            image.SaveAsPng(outStream);
+
+            /*
+            float seconds = sw.ElapsedMilliseconds / 1000f;
+            float rate = totalRayCount / seconds;
+            float mRate = rate / 1_000_000;
+
+            log.LogInformation($"totalRayCount: {totalRayCount}");
+            log.LogInformation($"BVH max depth: {worldBVH.MaxTestCount}");
+            log.LogInformation($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
+
+            log.LogInformation($"C# Queue trigger function processed: ");
+            */
+
+            return (totalRayCount, sw.Elapsed, swInit.Elapsed);
+        }
 
         [FunctionName("DurableRender_AssembleImage")]
         public static async Task AssembleImage(
@@ -118,48 +158,6 @@ namespace ServerlessTracing
 
             sourceRow.CopyTo(destRow);
         }
-
-        [FunctionName("DurableRender_RenderRow")]
-        public static (uint,TimeSpan, TimeSpan) RenderRow([ActivityTrigger] int row, 
-            [Blob("rows/{instanceId}/{row}.png", FileAccess.Write)] Stream outStream,
-            ILogger log)
-        {
-            // Super temporary way to find local teapot obj
-            var swInit = Stopwatch.StartNew();
-            string path = (new System.Uri(Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath;
-            path = Path.GetFullPath(path);
-            path = Path.GetDirectoryName(path);
-            path = path.Replace("%20", " ");
-            path += @"\..\teapot.obj";
-            //log.LogInformation($"Obj path: {path}");
-
-            var (world, cam) = Scenes.CornellScene(path, new SunsetquestRandom(), nx, ny);
-
-            var worldBVH = new BVH(world);
-            var wl = new IHitable[] { worldBVH };
-            swInit.Stop();
-            var pathTracer = new PathTracer(nx, ny, ns, true);
-            uint totalRayCount = 0;
-            var sw = Stopwatch.StartNew();
-            var image = pathTracer.RenderScene(wl, cam, ref totalRayCount, (pcComplete => log.LogInformation($"{pcComplete}%")), row, row);
-            sw.Stop();
-            image.SaveAsPng(outStream);
-
-            /*
-            float seconds = sw.ElapsedMilliseconds / 1000f;
-            float rate = totalRayCount / seconds;
-            float mRate = rate / 1_000_000;
-
-            log.LogInformation($"totalRayCount: {totalRayCount}");
-            log.LogInformation($"BVH max depth: {worldBVH.MaxTestCount}");
-            log.LogInformation($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
-
-            log.LogInformation($"C# Queue trigger function processed: ");
-            */
-
-            return (totalRayCount, sw.Elapsed, swInit.Elapsed);
-        }
-
 
         [FunctionName("DurableRender_HttpStart")]
         public static async Task<HttpResponseMessage> HttpStart(
