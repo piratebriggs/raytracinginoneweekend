@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerlessTracing", "Server
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RenderLib", "RenderLib\RenderLib.csproj", "{21E276FF-D200-4763-B452-E5B6D837F273}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "renderlibTests", "renderlibTests\renderlibTests.csproj", "{71E1E6ED-742E-4B77-8E2B-E03F748C8D72}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{21E276FF-D200-4763-B452-E5B6D837F273}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{21E276FF-D200-4763-B452-E5B6D837F273}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{21E276FF-D200-4763-B452-E5B6D837F273}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71E1E6ED-742E-4B77-8E2B-E03F748C8D72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71E1E6ED-742E-4B77-8E2B-E03F748C8D72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71E1E6ED-742E-4B77-8E2B-E03F748C8D72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71E1E6ED-742E-4B77-8E2B-E03F748C8D72}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

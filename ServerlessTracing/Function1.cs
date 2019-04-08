@@ -39,9 +39,9 @@ namespace ServerlessTracing
             var wl = new IHitable[] { worldBVH };
 
             var pathTracer = new PathTracer(nx, ny, ns, false);
-            uint totalRayCount = 0;
+            var outStream = new MemoryStream();
             var sw = Stopwatch.StartNew();
-            var image = pathTracer.RenderScene(wl, cam, ref totalRayCount, (pcComplete => log.Info($"{pcComplete}%")));
+            var totalRayCount = pathTracer.RenderScene(wl, cam, outStream, (pcComplete => log.Info($"{pcComplete}%")));
             sw.Stop();
             //image.Save("test.png");
             float seconds = sw.ElapsedMilliseconds / 1000f;

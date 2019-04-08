@@ -23,29 +23,27 @@ namespace ServerlessTracing
 {
     public static class DurableRender
     {
-        static int nx = 300;
-        static int ny = 300;
-        static int ns = 5000;
-
         [FunctionName("DurableRender")]
         public static async Task<int> RunOrchestrator(
             [OrchestrationTrigger] DurableOrchestrationContext context,
             ILogger log)
         {
- 
-            var tasks = new Task<(uint, TimeSpan, TimeSpan)>[ny];
-            for (int i = 0; i < ny; i++)
+
+            var p = context.GetInput<RenderParameters>();
+
+            var tasks = new Task<(uint, TimeSpan, TimeSpan)>[p.TileCount];
+            for (int i = 0; i < p.TileCount; i++)
             {
                 tasks[i] = context.CallActivityAsync<(uint, TimeSpan, TimeSpan)>(
                     "DurableRender_RenderRow",
-                    i);
+                    p.GetInstance(i) );
             }
 
             await Task.WhenAll(tasks);
 
             await context.CallActivityAsync(
                 "DurableRender_AssembleImage",
-                null
+                p
                 );
 
             uint totalRayCount= 0;
@@ -70,10 +68,13 @@ namespace ServerlessTracing
         }
 
         [FunctionName("DurableRender_RenderRow")]
-        public static (uint, TimeSpan, TimeSpan) RenderRow([ActivityTrigger] int row,
-    [Blob("rows/{instanceId}/{row}.png", FileAccess.Write)] Stream outStream,
-    ILogger log)
+        public static (uint,TimeSpan, TimeSpan) RenderRow(
+            [ActivityTrigger] DurableActivityContext context, 
+            [Blob("rows/{instanceId}/{data.currentTile}.png", FileAccess.Write)] Stream outStream,
+            ILogger log)
         {
+            var input = context.GetInput<RenderParametersInstance>();
+
             // Super temporary way to find local teapot obj
             var swInit = Stopwatch.StartNew();
             string path = (new System.Uri(Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath;
@@ -83,17 +84,18 @@ namespace ServerlessTracing
             path += @"\..\teapot.obj";
             //log.LogInformation($"Obj path: {path}");
 
-            var (world, cam) = Scenes.CornellScene(path, new SunsetquestRandom(), nx, ny);
+            var (world, cam) = Scenes.CornellScene(path, new SunsetquestRandom(), input.nx, input.ny);
+
+            var tileDetails = input.GetTileDetails(input.currentTile);
 
             var worldBVH = new BVH(world);
             var wl = new IHitable[] { worldBVH };
             swInit.Stop();
-            var pathTracer = new PathTracer(nx, ny, ns, true);
-            uint totalRayCount = 0;
+            var pathTracer = new PathTracer(input.nx, input.ny, input.ns, true);
             var sw = Stopwatch.StartNew();
-            var image = pathTracer.RenderScene(wl, cam, ref totalRayCount, (pcComplete => log.LogInformation($"{pcComplete}%")), row, row);
+            var totalRayCount = pathTracer.RenderScene(wl, cam, outStream, (pcComplete => log.LogInformation($"{pcComplete}%")), tileDetails.miny, tileDetails.maxy, tileDetails.minx, tileDetails.maxx);
             sw.Stop();
-            image.SaveAsPng(outStream);
+
 
             /*
             float seconds = sw.ElapsedMilliseconds / 1000f;
@@ -110,17 +112,20 @@ namespace ServerlessTracing
             return (totalRayCount, sw.Elapsed, swInit.Elapsed);
         }
 
+        // TODO: update to tiles
         [FunctionName("DurableRender_AssembleImage")]
         public static async Task AssembleImage(
-            [ActivityTrigger] object ignore,
-            [Blob("rows/{instanceId}")] CloudBlobDirectory directory,
-            [Blob("output/{instanceId}.png", FileAccess.Write)] Stream outputStream,
-            ILogger log)
+    [ActivityTrigger] DurableActivityContext context,
+    [Blob("rows/{instanceId}")] CloudBlobDirectory directory,
+    [Blob("output/{instanceId}.png", FileAccess.Write)] Stream outputStream,
+    ILogger log)
         {
+            var input = context.GetInput<(RenderParameters p, int currentTile)>();
+
             var list = directory.ListBlobsAsync();
             log.LogInformation("Number of blobs: {0}", list.Result.Count);
 
-            var image = new Image<Rgba32>(nx, ny);
+            var image = new Image<Rgba32>(input.p.nx, input.p.ny);
 
             var tasks = new List<Task>();
 
@@ -130,14 +135,14 @@ namespace ServerlessTracing
                 {
                     var blob = (CloudBlockBlob)item;
 
-                    if(!int.TryParse(blob.Name.Split('/')[1].Split('.')[0], out var rowNumber))
+                    if (!int.TryParse(blob.Name.Split('/')[1].Split('.')[0], out var rowNumber))
                     {
                         throw new InvalidDataException("Unable to parse row number: " + blob.Name);
                     }
 
                     var ms = new MemoryStream();
                     var downloadTask = blob.DownloadToStreamAsync(ms)
-                        .ContinueWith(laa => CopyRow(ms, image, rowNumber));
+                        .ContinueWith(laa => CopyRow(ms, image, rowNumber, input.p.ny));
                     tasks.Add(downloadTask);
                 }
             }
@@ -146,7 +151,7 @@ namespace ServerlessTracing
             image.SaveAsPng(outputStream);
         }
 
-        public static void CopyRow(Stream source, Image<Rgba32> destination, int destinationRow)
+        public static void CopyRow(Stream source, Image<Rgba32> destination, int destinationRow, int ny)
         {
             source.Seek(0, SeekOrigin.Begin);
 
@@ -159,18 +164,44 @@ namespace ServerlessTracing
             sourceRow.CopyTo(destRow);
         }
 
+        /*
+         * /render/100/100/50/10/true
+         */
+
         [FunctionName("DurableRender_HttpStart")]
         public static async Task<HttpResponseMessage> HttpStart(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")]HttpRequestMessage req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "render/{nx:int}/{ny:int}/{ns:}/{tileSize:int}/{doLog:bool}")]HttpRequestMessage req,
             [OrchestrationClient]DurableOrchestrationClient starter,
-            ILogger log)
+            ILogger log,
+            int nx, int ny, int ns, int tileSize, bool dolog)
         {
             // Function input comes from the request content.
-            string instanceId = await starter.StartNewAsync("DurableRender", null);
+            string instanceId = await starter.StartNewAsync("DurableRender", new RenderParameters()
+            {
+                nx = nx,
+                ny = ny,
+                ns = ns,
+                tileSize = tileSize,
+                doLog = dolog
+            });
 
             log.LogInformation($"Started orchestration with ID = '{instanceId}'.");
 
             return starter.CreateCheckStatusResponse(req, instanceId);
         }
+
+        [FunctionName("DurableRender_TerminateAll")]
+        public static async Task TerminateAll(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")]HttpRequestMessage req,
+            [OrchestrationClient] DurableOrchestrationClient client,
+            ILogger log)
+        {
+            IList<DurableOrchestrationStatus> instances = await client.GetStatusAsync(); // You can pass CancellationToken as a parameter.
+            foreach (var instance in instances)
+            {
+                await client.TerminateAsync(instance.InstanceId, "manual");
+            };
+        }
+
     }
 }

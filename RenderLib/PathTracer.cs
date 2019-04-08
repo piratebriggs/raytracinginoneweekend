@@ -4,6 +4,7 @@ using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -50,9 +51,9 @@ namespace RenderLib
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void RenderRow(Span<Rgba32> rowSpan, IHitable[] wl, Camera cam, int j, int nx, int ny, int ns, ImSoRandom rnd, ConcurrentDictionary<int, int> processedRows, ref uint rayCount)
+        private static void RenderRow(Span<Rgba32> rowSpan, IHitable[] wl, Camera cam, int j, int iMin, int iMax,int nx, int ny, int ns, ImSoRandom rnd, ConcurrentDictionary<int, int> processedRows, ref uint rayCount)
         {
-            for (int i = 0; i < nx; i++)
+            for (int i = iMin; i <= iMax; i++)
             {
                 var col = new Vector3(0);
 
@@ -68,7 +69,7 @@ namespace RenderLib
                 col /= (float)ns;
                 col = new Vector3((float)Math.Sqrt(col.X), (float)Math.Sqrt(col.Y), (float)Math.Sqrt(col.Z));
 
-                rowSpan[i] = new Rgba32(col);
+                rowSpan[i - iMin] = new Rgba32(col);
             }
             processedRows.TryAdd(j, Thread.CurrentThread.ManagedThreadId);
         }
@@ -83,7 +84,7 @@ namespace RenderLib
         /// <param name="startRow">0-indexed row number</param>
         /// <param name="endRow">0-indexed row number</param>
         /// <returns></returns>
-        public Image<Rgba32> RenderScene(IHitable[] world, Camera cam, ref uint totalRayCount, Action<float> progressCallback, int startRow = 0, int? endRow = null)
+        public uint RenderScene(IHitable[] world, Camera cam, Stream outstream, Action<float> progressCallback, int startRow = 0, int? endRow = null, int startCol = 0, int? endCol = null)
         {
             var processedRows = new ConcurrentDictionary<int, int>();
 
@@ -93,10 +94,15 @@ namespace RenderLib
             {
                 endRow = ny - 1;
             }
+            if (!endCol.HasValue)
+            {
+                endCol = nx - 1;
+            }
 
             var numRows = endRow.Value - startRow + 1;
+            var numCols = endCol.Value - startCol + 1;
 
-            Image<Rgba32> image = new Image<Rgba32>(nx, numRows);
+            Image<Rgba32> image = new Image<Rgba32>(numCols, numRows);
 
             if (singleThread)
             {
@@ -106,7 +112,7 @@ namespace RenderLib
                     var index = numRows - 1 - (j - startRow);
                     var rowSpan = image.GetPixelRowSpan(index);
 
-                    RenderRow(rowSpan, world, cam, j, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
+                    RenderRow(rowSpan, world, cam, j, startCol, endCol.Value, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
                     progressCallback(processedRows.Count / (float)numRows * 100f);
                 }
             }
@@ -117,14 +123,14 @@ namespace RenderLib
                     var index = numRows - 1 - (j - startRow);
                     var rowSpan = image.GetPixelRowSpan(index);
 
-                    RenderRow(rowSpan, world, cam, j, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
+                    RenderRow(rowSpan, world, cam, j, startCol, endCol.Value, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
                     progressCallback(processedRows.Count / (float)numRows * 100f);
 
                     return rnd;
                 }, (rnd) => { });
             }
-            totalRayCount = tmpTotalRayCount;
-            return image;
+            image.SaveAsPng(outstream);
+            return tmpTotalRayCount;
         }
     }
 }

@@ -25,9 +25,10 @@ namespace raytracinginoneweekend
             var pathTracer = new PathTracer(nx, ny, ns, false);
             uint totalRayCount=0;
             sw.Start();
-            var image = pathTracer.RenderScene(wl, cam,  ref  totalRayCount, (pcComplete => Console.WriteLine($"{pcComplete}%")));
+            // TODO:  create FileStream
+            //var image = pathTracer.RenderScene(wl, cam,  ref  totalRayCount, (pcComplete => Console.WriteLine($"{pcComplete}%")));
             sw.Stop();
-            image.Save("test.png");
+            //image.Save("test.png");
             float seconds = sw.ElapsedMilliseconds / 1000f;
             float rate = totalRayCount / seconds;
             float mRate = rate / 1_000_000;
