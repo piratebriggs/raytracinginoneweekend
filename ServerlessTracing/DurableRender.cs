@@ -112,7 +112,6 @@ namespace ServerlessTracing
             return (totalRayCount, sw.Elapsed, swInit.Elapsed);
         }
 
-        // TODO: update to tiles
         [FunctionName("DurableRender_AssembleImage")]
         public static async Task AssembleImage(
     [ActivityTrigger] DurableActivityContext context,
@@ -120,12 +119,12 @@ namespace ServerlessTracing
     [Blob("output/{instanceId}.png", FileAccess.Write)] Stream outputStream,
     ILogger log)
         {
-            var input = context.GetInput<(RenderParameters p, int currentTile)>();
+            var input = context.GetInput<RenderParameters>();
 
             var list = directory.ListBlobsAsync();
             log.LogInformation("Number of blobs: {0}", list.Result.Count);
 
-            var image = new Image<Rgba32>(input.p.nx, input.p.ny);
+            var image = new Image<Rgba32>(input.nx, input.ny);
 
             var tasks = new List<Task>();
 
@@ -135,14 +134,15 @@ namespace ServerlessTracing
                 {
                     var blob = (CloudBlockBlob)item;
 
-                    if (!int.TryParse(blob.Name.Split('/')[1].Split('.')[0], out var rowNumber))
+                    if (!int.TryParse(blob.Name.Split('/')[1].Split('.')[0], out var currentTile))
                     {
                         throw new InvalidDataException("Unable to parse row number: " + blob.Name);
                     }
+                    var tileDetails = input.GetTileDetails(currentTile);
 
                     var ms = new MemoryStream();
                     var downloadTask = blob.DownloadToStreamAsync(ms)
-                        .ContinueWith(laa => CopyRow(ms, image, rowNumber, input.p.ny));
+                        .ContinueWith(laa => CopyTile(ms, image, tileDetails.miny, tileDetails.minx, input.ny));
                     tasks.Add(downloadTask);
                 }
             }
@@ -151,17 +151,24 @@ namespace ServerlessTracing
             image.SaveAsPng(outputStream);
         }
 
-        public static void CopyRow(Stream source, Image<Rgba32> destination, int destinationRow, int ny)
+        public static void CopyTile(Stream source, Image<Rgba32> destination, int destinationRow, int destinationCol, int ny)
         {
             source.Seek(0, SeekOrigin.Begin);
 
-            var rowImage = Image.Load(source);
-            var sourceRow = rowImage.GetPixelRowSpan<Rgba32>(0);
+            var sourceImage = Image.Load(source);
+            for (int i = 0; i < sourceImage.Height; i++)
+            {
+                var sourceRow = sourceImage.GetPixelRowSpan<Rgba32>(sourceImage.Height - 1 - i);
 
-            var rowIndex = ny - 1 - destinationRow;
-            var destRow = destination.GetPixelRowSpan(rowIndex);
+                var rowIndex = ny - 1 - (destinationRow + i);
+                var destRow = destination.GetPixelRowSpan(rowIndex);
 
-            sourceRow.CopyTo(destRow);
+                for(int j = 0; j<sourceImage.Width; j++)
+                {
+                    destRow[destinationCol + j] = sourceRow[j];
+                }
+            }
+
         }
 
         /*
