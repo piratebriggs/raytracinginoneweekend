@@ -31,10 +31,10 @@ namespace ServerlessTracing
 
             var p = context.GetInput<RenderParameters>();
 
-            var tasks = new Task<(uint, TimeSpan, TimeSpan)>[p.TileCount];
+            var tasks = new Task<(uint totalRayCount, TimeSpan render, TimeSpan init, uint maxBvhDepth)>[p.TileCount];
             for (int i = 0; i < p.TileCount; i++)
             {
-                tasks[i] = context.CallActivityAsync<(uint, TimeSpan, TimeSpan)>(
+                tasks[i] = context.CallActivityAsync<(uint, TimeSpan, TimeSpan, uint)>(
                     "DurableRender_RenderRow",
                     p.GetInstance(i) );
             }
@@ -49,18 +49,27 @@ namespace ServerlessTracing
             uint totalRayCount= 0;
             TimeSpan renderTimespan = new TimeSpan();
             TimeSpan sceneGenTimespan = new TimeSpan();
-            foreach(var task in tasks)
+            TimeSpan minTimespan = new TimeSpan(long.MaxValue);
+            TimeSpan maxTimespan = new TimeSpan(0);
+            uint maxBvhDepth = 0;
+
+            foreach (var task in tasks)
             {
-                totalRayCount += task.Result.Item1;
-                renderTimespan += task.Result.Item2;
-                sceneGenTimespan += task.Result.Item3;
+                totalRayCount += task.Result.totalRayCount;
+                renderTimespan += task.Result.render;
+                sceneGenTimespan += task.Result.init;
+                var functionTimespan = task.Result.init + task.Result.render;
+                minTimespan = functionTimespan < minTimespan ? functionTimespan : minTimespan;
+                maxTimespan = functionTimespan > maxTimespan ? functionTimespan : maxTimespan;
+                maxBvhDepth = task.Result.maxBvhDepth > maxBvhDepth ? task.Result.maxBvhDepth : maxBvhDepth;
             }
             float seconds = renderTimespan.Milliseconds / 1000f;
             float rate = totalRayCount / seconds;
             float mRate = rate / 1_000_000;
 
             log.LogInformation($"totalRayCount: {totalRayCount}");
-            //log.LogInformation($"BVH max depth: {worldBVH.MaxTestCount}");
+            log.LogInformation($"BVH max depth: {maxBvhDepth}");
+            log.LogInformation($"Min/Max function duration: {minTimespan}/{maxTimespan}");
             log.LogInformation($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
             log.LogInformation($"Scene Generation Duration: {sceneGenTimespan.Milliseconds}ms.");
 
@@ -68,7 +77,7 @@ namespace ServerlessTracing
         }
 
         [FunctionName("DurableRender_RenderRow")]
-        public static (uint,TimeSpan, TimeSpan) RenderRow(
+        public static (uint,TimeSpan, TimeSpan, uint) RenderRow(
             [ActivityTrigger] DurableActivityContext context, 
             [Blob("rows/{instanceId}/{data.currentTile}.png", FileAccess.Write)] Stream outStream,
             ILogger log)
@@ -93,31 +102,20 @@ namespace ServerlessTracing
             swInit.Stop();
             var pathTracer = new PathTracer(input.nx, input.ny, input.ns, true);
             var sw = Stopwatch.StartNew();
-            var totalRayCount = pathTracer.RenderScene(wl, cam, outStream, (pcComplete => log.LogInformation($"{pcComplete}%")), tileDetails.miny, tileDetails.maxy, tileDetails.minx, tileDetails.maxx);
+            var totalRayCount = pathTracer.RenderScene(wl, cam, outStream, pcComplete => { if(input.doLog) log.LogInformation("Tile: {0} - {1}%", input.currentTile, pcComplete); }, tileDetails.miny, tileDetails.maxy, tileDetails.minx, tileDetails.maxx);
             sw.Stop();
 
-
-            /*
-            float seconds = sw.ElapsedMilliseconds / 1000f;
-            float rate = totalRayCount / seconds;
-            float mRate = rate / 1_000_000;
-
-            log.LogInformation($"totalRayCount: {totalRayCount}");
-            log.LogInformation($"BVH max depth: {worldBVH.MaxTestCount}");
-            log.LogInformation($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
-
-            log.LogInformation($"C# Queue trigger function processed: ");
-            */
-
-            return (totalRayCount, sw.Elapsed, swInit.Elapsed);
+            return (totalRayCount, sw.Elapsed, swInit.Elapsed, worldBVH.MaxTestCount);
         }
+
+
 
         [FunctionName("DurableRender_AssembleImage")]
         public static async Task AssembleImage(
-    [ActivityTrigger] DurableActivityContext context,
-    [Blob("rows/{instanceId}")] CloudBlobDirectory directory,
-    [Blob("output/{instanceId}.png", FileAccess.Write)] Stream outputStream,
-    ILogger log)
+            [ActivityTrigger] DurableActivityContext context,
+            [Blob("rows/{instanceId}")] CloudBlobDirectory directory,
+            [Blob("output/{instanceId}.png", FileAccess.Write)] Stream outputStream,
+            ILogger log)
         {
             var input = context.GetInput<RenderParameters>();
 
@@ -172,9 +170,11 @@ namespace ServerlessTracing
         }
 
         /*
-         * /render/100/100/50/10/true
+         * Sample invokations
+         * /api/render/100/100/10/50/true
+         * /api/render/300/300/5000/10/true
+         * /api/render/1920/1080/5000/10/true
          */
-
         [FunctionName("DurableRender_HttpStart")]
         public static async Task<HttpResponseMessage> HttpStart(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "render/{nx:int}/{ny:int}/{ns:}/{tileSize:int}/{doLog:bool}")]HttpRequestMessage req,
