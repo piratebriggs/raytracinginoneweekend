@@ -99,8 +99,11 @@ namespace ServerlessTracing
 
             var worldBVH = new BVH(world);
             var wl = new IHitable[] { worldBVH };
-            swInit.Stop();
             var pathTracer = new PathTracer(input.nx, input.ny, input.ns, true);
+            swInit.Stop();
+
+            log.LogInformation($"Tile {input.currentTile} Init Duration: {swInit.Elapsed}");
+
             var sw = Stopwatch.StartNew();
             var totalRayCount = pathTracer.RenderScene(wl, cam, outStream, pcComplete => { if(input.doLog) log.LogInformation("Tile: {0} - {1}%", input.currentTile, pcComplete); }, tileDetails.miny, tileDetails.maxy, tileDetails.minx, tileDetails.maxx);
             sw.Stop();
