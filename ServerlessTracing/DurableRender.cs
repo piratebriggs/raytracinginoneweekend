@@ -63,7 +63,7 @@ namespace ServerlessTracing
                 maxTimespan = functionTimespan > maxTimespan ? functionTimespan : maxTimespan;
                 maxBvhDepth = task.Result.maxBvhDepth > maxBvhDepth ? task.Result.maxBvhDepth : maxBvhDepth;
             }
-            float seconds = renderTimespan.Milliseconds / 1000f;
+            float seconds = (float)(renderTimespan.TotalMilliseconds / 1000.0);
             float rate = totalRayCount / seconds;
             float mRate = rate / 1_000_000;
 
@@ -71,7 +71,7 @@ namespace ServerlessTracing
             log.LogInformation($"BVH max depth: {maxBvhDepth}");
             log.LogInformation($"Min/Max function duration: {minTimespan}/{maxTimespan}");
             log.LogInformation($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
-            log.LogInformation($"Scene Generation Duration: {sceneGenTimespan.Milliseconds}ms.");
+            log.LogInformation($"Scene Generation Duration: {sceneGenTimespan}.");
 
             return 0;
         }
