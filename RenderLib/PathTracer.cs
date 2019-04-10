@@ -54,16 +54,6 @@ namespace RenderLib
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void RenderRow(Span<Vector4> rowSpan, IHitable[] wl, Camera cam, int j, int iMin, int iMax,int nx, int ny, int ns, ImSoRandom rnd, ConcurrentDictionary<int, int> processedRows, ref uint rayCount)
         {
-            for (int i = iMin; i <= iMax; i++)
-            {
-                float u = ((float)i + rnd.NextFloat()) / (float)nx;
-                float v = ((float)j + rnd.NextFloat()) / (float)ny;
-                var r = cam.GetRay(u, v, rnd);
-                var col = new Vector4( Color(r, wl, 0, rnd, ref rayCount),1);
-
-                rowSpan[i - iMin] += col;
-            }
-            processedRows.TryAdd(j, Thread.CurrentThread.ManagedThreadId);
         }
 
         /// <summary>
@@ -96,36 +86,38 @@ namespace RenderLib
             var numCols = endCol.Value - startCol + 1;
             var buffer = new Vector4[numRows * numCols];
 
-            if (singleThread)
+            var pcCompleteLast = 0;
+
+            var rnd = new SunsetquestRandom();
+            var sw = Stopwatch.StartNew();
+            do
             {
-                var rnd = new SunsetquestRandom();
-                var sw = Stopwatch.StartNew();
-                do
+                for (int j = startRow; j <= endRow; j++)
                 {
-                    for (int j = startRow; j <= endRow; j++)
+                    var index = numRows - 1 - (j - startRow);
+                    var rowSpan = buffer.AsSpan(index * numCols, numCols);
+
+                    for (int i = startCol; i <= endCol.Value; i++)
                     {
-                        var index = numRows - 1 - (j - startRow);
-                        var rowSpan = buffer.AsSpan(index * numCols, numCols);
+                        float u = ((float)i + rnd.NextFloat()) / (float)nx;
+                        float v = ((float)j + rnd.NextFloat()) / (float)ny;
+                        var r = cam.GetRay(u, v, rnd);
+                        var col = new Vector4(Color(r, world, 0, rnd, ref tmpTotalRayCount), 1);
 
-                        RenderRow(rowSpan, world, cam, j, startCol, endCol.Value, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
-                        progressCallback(processedRows.Count / (float)numRows * 100f);
+                        rowSpan[i - startCol] += col;
                     }
-                } while (sw.Elapsed < timeout);
-                sw.Stop();
-            }
-            else
-            {
-                //Parallel.For(startRow, endRow.Value, () => new SunsetquestRandom(), (j, loop, rnd) =>
-                //{
-                //    var index = numRows - 1 - (j - startRow);
-                //    var rowSpan = image.GetPixelRowSpan(index);
+                    processedRows.TryAdd(j, Thread.CurrentThread.ManagedThreadId);
 
-                //    RenderRow(rowSpan, world, cam, j, startCol, endCol.Value, nx, ny, ns, rnd, processedRows, ref tmpTotalRayCount);
-                //    progressCallback(processedRows.Count / (float)numRows * 100f);
+                    var pcComplete = (int)((float)sw.ElapsedMilliseconds / (float)timeout.TotalMilliseconds * 100f);
+                    if(pcComplete != pcCompleteLast)
+                    {
+                        pcCompleteLast = pcComplete;
+                        progressCallback(pcComplete);
+                    }
+                }
+            } while (sw.Elapsed < timeout);
+            sw.Stop();
 
-                //    return rnd;
-                //}, (rnd) => { });
-            }
             var image = new Image<Rgba32>(numCols, numRows);
             for(int i = 0; i<numRows; i++)
             {
