@@ -1,6 +1,7 @@
 ﻿using raytracinginoneweekend;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Concurrent;
@@ -8,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -66,9 +68,8 @@ namespace RenderLib
         /// <param name="startRow">0-indexed row number</param>
         /// <param name="endRow">0-indexed row number</param>
         /// <returns></returns>
-        public uint RenderScene(IHitable[] world, Camera cam, Stream outstream, Action<float> progressCallback, int startRow = 0, int? endRow = null, int startCol = 0, int? endCol = null)
+        public uint RenderScene(IHitable[] world, Camera cam, Stream inStream, Stream outstream, Action<float> progressCallback, int startRow = 0, int? endRow = null, int startCol = 0, int? endCol = null)
         {
-            var processedRows = new ConcurrentDictionary<int, int>();
             var timeout = TimeSpan.FromSeconds(ns);
 
             uint tmpTotalRayCount = 0;
@@ -85,6 +86,27 @@ namespace RenderLib
             var numRows = endRow.Value - startRow + 1;
             var numCols = endCol.Value - startCol + 1;
             var buffer = new Vector4[numRows * numCols];
+            var sampleCount = 0;
+            Span<byte> byteSpan = BitConverter.GetBytes(sampleCount);
+            Span<int> intSpan = MemoryMarshal.Cast<byte, int>(byteSpan);
+
+
+            if (inStream.Length > 0)
+            {
+                var png = new PngDecoder();
+                png.IgnoreMetadata = false;
+                var sourceImage = png.Decode<Rgba32>(new Configuration(),inStream);
+                var sourceBuffer = sourceImage.GetPixelSpan();
+                for(var i=0; i < 4; i++)
+                {
+                    byteSpan[i] = sourceBuffer[i].A;
+                }
+                sampleCount = intSpan[0];
+                for (var i = 0; i < sourceBuffer.Length; i++)
+                {
+                    buffer[i] = sourceBuffer[i].ToVector4();
+                }
+            }
 
             var pcCompleteLast = 0;
 
@@ -92,6 +114,7 @@ namespace RenderLib
             var sw = Stopwatch.StartNew();
             do
             {
+                sampleCount += 1;
                 for (int j = startRow; j <= endRow; j++)
                 {
                     var index = numRows - 1 - (j - startRow);
@@ -104,19 +127,18 @@ namespace RenderLib
                         var r = cam.GetRay(u, v, rnd);
                         var col = new Vector4(Color(r, world, 0, rnd, ref tmpTotalRayCount), 1);
 
-                        rowSpan[i - startCol] += col;
+                        rowSpan[i - startCol] += (col - rowSpan[i - startCol])/sampleCount;
                     }
-                    processedRows.TryAdd(j, Thread.CurrentThread.ManagedThreadId);
-
-                    var pcComplete = (int)((float)sw.ElapsedMilliseconds / (float)timeout.TotalMilliseconds * 100f);
-                    if(pcComplete != pcCompleteLast)
-                    {
-                        pcCompleteLast = pcComplete;
-                        progressCallback(pcComplete);
-                    }
+                }
+                var pcComplete = (int)((float)sw.ElapsedMilliseconds / (float)timeout.TotalMilliseconds * 100f);
+                if (pcComplete != pcCompleteLast)
+                {
+                    pcCompleteLast = pcComplete;
+                    progressCallback(pcComplete);
                 }
             } while (sw.Elapsed < timeout);
             sw.Stop();
+
 
             var image = new Image<Rgba32>(numCols, numRows);
             for(int i = 0; i<numRows; i++)
@@ -127,13 +149,20 @@ namespace RenderLib
                 for(var j = 0; j<numCols; j++)
                 {
 
-                    var col = sourceRowSpan[j] / new Vector4(sourceRowSpan[j].W);
+                    var col = sourceRowSpan[j];
 
                     var col2 = new Vector3((float)Math.Sqrt(col.X), (float)Math.Sqrt(col.Y), (float)Math.Sqrt(col.Z));
                     rowSpan[j] = new Rgba32(col2);
                 }
             }
+            var imageSpan = image.GetPixelSpan<Rgba32>();
+            intSpan[0] = sampleCount;
+            for (var i = 0; i < 4; i++)
+            {
+                imageSpan[i].A = byteSpan[i];
+            }
 
+            image.MetaData.Properties.Add(new SixLabors.ImageSharp.MetaData.ImageProperty("sampleCount", sampleCount.ToString()));
             image.SaveAsPng(outstream);
             return tmpTotalRayCount;
         }

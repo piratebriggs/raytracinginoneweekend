@@ -24,9 +24,19 @@ namespace raytracinginoneweekend
             var wl = new IHitable[] { worldBVH };
             uint totalRayCount;
             var pathTracer = new PathTracer(nx, ny, ns, false);
+
+            var ms = new MemoryStream();
+            if (File.Exists("test.png"))
+            {
+                using (var fileStream = new FileStream("test.png", FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    fileStream.CopyTo(ms);
+                    ms.Seek(0, SeekOrigin.Begin);
+                }
+            }
             using(var fileStream = new FileStream("test.png", FileMode.Create, FileAccess.Write, FileShare.None)){
                 sw.Start();
-                totalRayCount = pathTracer.RenderScene(wl, cam, fileStream, (pcComplete => Console.WriteLine($"{pcComplete}%")));
+                totalRayCount = pathTracer.RenderScene(wl, cam, ms,fileStream, (pcComplete => Console.WriteLine($"{pcComplete}%")));
                 sw.Stop();
             }
             float seconds = sw.ElapsedMilliseconds / 1000f;

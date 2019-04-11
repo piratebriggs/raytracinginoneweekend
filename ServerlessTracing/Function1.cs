@@ -41,18 +41,19 @@ namespace ServerlessTracing
             var pathTracer = new PathTracer(nx, ny, ns, false);
             var outStream = new MemoryStream();
             var sw = Stopwatch.StartNew();
-            var totalRayCount = pathTracer.RenderScene(wl, cam, outStream, (pcComplete => log.Info($"{pcComplete}%")));
-            sw.Stop();
-            //image.Save("test.png");
-            float seconds = sw.ElapsedMilliseconds / 1000f;
-            float rate = totalRayCount / seconds;
-            float mRate = rate / 1_000_000;
+            // TODO: refactor
+            //var totalRayCount = pathTracer.RenderScene(wl, cam, outStream, (pcComplete => log.Info($"{pcComplete}%")));
+            //sw.Stop();
+            ////image.Save("test.png");
+            //float seconds = sw.ElapsedMilliseconds / 1000f;
+            //float rate = totalRayCount / seconds;
+            //float mRate = rate / 1_000_000;
 
-            log.Info($"totalRayCount: {totalRayCount}");
-            log.Info($"BVH max depth: {worldBVH.MaxTestCount}");
-            log.Info($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
+            //log.Info($"totalRayCount: {totalRayCount}");
+            //log.Info($"BVH max depth: {worldBVH.MaxTestCount}");
+            //log.Info($"Duration: {seconds} | Rate: {mRate} MRays / sec.");
 
-            log.Info($"C# Queue trigger function processed: ");
+            //log.Info($"C# Queue trigger function processed: ");
         }
     }
 }
