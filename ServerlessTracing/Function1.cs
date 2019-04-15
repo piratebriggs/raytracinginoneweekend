@@ -9,8 +9,6 @@ using Microsoft.Azure.WebJobs.Host;
 using raytracinginoneweekend;
 using raytracinginoneweekend.Hitables;
 using RenderLib;
-using SixLabors.ImageSharp;
-
 
 namespace ServerlessTracing
 {

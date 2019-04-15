@@ -1,5 +1,4 @@
 ﻿using raytracinginoneweekend.Hitables;
-using SixLabors.ImageSharp;
 using System;
 using System.Diagnostics;
 using RenderLib;
