@@ -18,6 +18,7 @@ using SixLabors.ImageSharp.Advanced;
 using System;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System.Linq;
+using System.Numerics;
 
 namespace ServerlessTracing
 {
@@ -31,10 +32,10 @@ namespace ServerlessTracing
 
             var p = context.GetInput<RenderParameters>();
 
-            var tasks = new Task<(uint totalRayCount, TimeSpan render, TimeSpan init, uint maxBvhDepth)>[p.TileCount];
+            var tasks = new Task<(uint totalRayCount, uint sampleCount, TimeSpan render, TimeSpan init, uint maxBvhDepth)>[p.TileCount];
             for (int i = 0; i < p.TileCount; i++)
             {
-                tasks[i] = context.CallActivityAsync<(uint, TimeSpan, TimeSpan, uint)>(
+                tasks[i] = context.CallActivityAsync<(uint, uint, TimeSpan, TimeSpan, uint)>(
                     "DurableRender_RenderRow",
                     p.GetInstance(i) );
             }
@@ -77,15 +78,18 @@ namespace ServerlessTracing
         }
 
         [FunctionName("DurableRender_RenderRow")]
-        public static (uint,TimeSpan, TimeSpan, uint) RenderRow(
+        public static (uint, uint, TimeSpan, TimeSpan, uint) RenderRow(
             [ActivityTrigger] DurableActivityContext context, 
             [Blob("rows/{instanceId}/{data.currentTile}.png", FileAccess.Write)] Stream outStream,
             ILogger log)
         {
+            var sw = Stopwatch.StartNew();
+
             var input = context.GetInput<RenderParametersInstance>();
 
+            var timeout = new TimeSpan(0, 0, input.ns);
+
             // Super temporary way to find local teapot obj
-            var swInit = Stopwatch.StartNew();
             string path = (new System.Uri(Assembly.GetExecutingAssembly().CodeBase)).AbsolutePath;
             path = Path.GetFullPath(path);
             path = Path.GetDirectoryName(path);
@@ -100,18 +104,20 @@ namespace ServerlessTracing
             var worldBVH = new BVH(world);
             var wl = new IHitable[] { worldBVH };
             var pathTracer = new PathTracer(input.nx, input.ny, input.ns, true);
-            swInit.Stop();
+            var elapsedInit = sw.Elapsed;
 
-            log.LogInformation($"Tile {input.currentTile} Init Duration: {swInit.Elapsed}");
+            log.LogInformation($"Tile {input.currentTile} Init Duration: {elapsedInit}");
 
-            var sw = Stopwatch.StartNew();
-            //TODO: refactor
-            uint totalRayCount = 0;// pathTracer.RenderScene(wl, cam, outStream, pcComplete => { if(input.doLog) log.LogInformation("Tile: {0} - {1}%", input.currentTile, pcComplete); }, tileDetails.miny, tileDetails.maxy, tileDetails.minx, tileDetails.maxx);
+            var buffer = new Vector4[input.nx * input.ny];
+            uint sampleCount = 0;
+
+            uint rayCount = pathTracer.RenderScene(wl, cam,buffer,input.nx,ref sampleCount, newSampleCount => { if(input.doLog) log.LogInformation("Tile: {0} - {1} samples", input.currentTile, newSampleCount); return sw.Elapsed < timeout; }, tileDetails.miny, tileDetails.maxy, tileDetails.minx, tileDetails.maxx);
             sw.Stop();
 
-            return (totalRayCount, sw.Elapsed, swInit.Elapsed, worldBVH.MaxTestCount);
-        }
+            PngHelper.SaveImage(outStream, tileDetails.maxx - tileDetails.minx + 1, tileDetails.maxy - tileDetails.miny + 1, buffer, input.nx, sampleCount);
 
+            return (rayCount, sampleCount, sw.Elapsed - elapsedInit, elapsedInit, worldBVH.MaxTestCount);
+        }
 
 
         [FunctionName("DurableRender_AssembleImage")]
@@ -158,6 +164,15 @@ namespace ServerlessTracing
             source.Seek(0, SeekOrigin.Begin);
 
             var sourceImage = Image.Load(source);
+
+            // remove sampleCount data from A channel
+            var imageSpan = sourceImage.GetPixelSpan();
+            for (var i = 0; i < 4; i++)
+            {
+                imageSpan[i].A = 255;
+            }
+
+
             for (int i = 0; i < sourceImage.Height; i++)
             {
                 var sourceRow = sourceImage.GetPixelRowSpan<Rgba32>(sourceImage.Height - 1 - i);
