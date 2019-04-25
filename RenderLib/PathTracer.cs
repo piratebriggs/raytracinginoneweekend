@@ -86,20 +86,27 @@ namespace RenderLib
                 endCol = nx - 1;
             }
 
-            var bufferStart = buffer.AsMemory().Slice(((ny - 1) - endRow.Value) * nx + startCol);
+            var bufferStart = buffer.AsMemory().Slice(startRow * nx + startCol);
 
             return RenderScene(world, cam, bufferStart, bufferStepSize, ref sampleCount, progressCallback, startRow, endRow, startCol, endCol);
         }
 
         /// <summary>
-        /// 
+        /// Renders the scene described by (world, cam) into buffer.
+        /// Optionally only renders the portion of the scene described by startRow, endRow, startCol, endCol.
+        /// Assumes that each pixel in buffer already contains sampleCount samples.
+        /// Buffer origin is top-left
         /// </summary>
         /// <param name="world"></param>
         /// <param name="cam"></param>
-        /// <param name="totalRayCount"></param>
-        /// <param name="progressCallback"></param>
+        /// <param name="buffer">the render buffer. the pixel described by startRow, startCol will be rendered at buffer[0]</param>
+        /// <param name="bufferStepSize">number of bytes to skip between rows</param>
+        /// <param name="sampleCount">number of samples per pixel in the potion of the bufer of being rendered. in/out</param>
+        /// <param name="progressCallback">return false to abort redering. Called once per rendering pass</param>
         /// <param name="startRow">0-indexed row number</param>
         /// <param name="endRow">0-indexed row number</param>
+        /// <param name="startCol">0-indexed column number</param>
+        /// <param name="endCol">0-indexed column number</param>
         /// <returns></returns>
         public uint RenderScene(IHitable[] world, Camera cam, Memory<Vector4> buffer, int bufferStepSize, ref uint sampleCount, Func<uint, bool> progressCallback, int startRow = 0, int? endRow = null, int startCol = 0, int? endCol = null)
         {
@@ -125,13 +132,13 @@ namespace RenderLib
                 sampleCount += 1;
                 for (int j = startRow; j <= endRow; j++)
                 {
-                    var index = numRows - 1 - (j - startRow);
+                    var index = (j - startRow);
                     var rowSpan = buffer.Slice(index * bufferStepSize, numCols).Span;
 
                     for (int i = startCol; i <= endCol.Value; i++)
                     {
-                        float u = ((float)i + rnd.NextFloat()) / (float)nx;
-                        float v = ((float)j + rnd.NextFloat()) / (float)ny;
+                        float u = 1f - (((float)i + rnd.NextFloat()) / (float)nx);
+                        float v = 1f - (((float)j + rnd.NextFloat()) / (float)ny);
                         var r = cam.GetRay(u, v, rnd);
                         var col = new Vector4(Color(r, world, 0, rnd, ref tmpTotalRayCount), 1);
 

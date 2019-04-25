@@ -74,7 +74,7 @@ namespace InteractiveRender
                 for (var x = minx; x <= maxx; x++)
                 {
                     // No AsMemory() here in framework-land
-                    var pix = _buffer[((_parameters.ny-1)- y) * _parameters.ny + x];
+                    var pix = _buffer[y * _parameters.ny + x];
                     pixelBuffer[i++] = (byte)((float)Math.Sqrt(pix.X) * 255);
                     pixelBuffer[i++] = (byte)((float)Math.Sqrt(pix.Y) * 255);
                     pixelBuffer[i++] = (byte)((float)Math.Sqrt(pix.Z) * 255);
@@ -103,6 +103,8 @@ namespace InteractiveRender
             // Fill buffer with gradient 
             Parallel.For(0, p.TileCount, i =>
             {
+                //Thread.Sleep(10);
+
                 var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(i);
                 // draw a tile of gradient color that should tile smoothly for debug purposes
                 for (var y = miny; y <= maxy; y++)
@@ -116,14 +118,14 @@ namespace InteractiveRender
             });
 
             // single pass render to p.ns samples
-            for(var i = 0; i<p.TileCount;i++)
+            Parallel.For(0, p.TileCount, i =>
             {
                 var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(i);
                 uint tmpSampleCount = 0;
-                var rayCount = pathTracer.RenderScene(wl, cam, _buffer, p.nx, ref tmpSampleCount, newSampleCount => {  return newSampleCount < p.ns; }, miny, maxy, minx, maxx);
+                var rayCount = pathTracer.RenderScene(wl, cam, _buffer, p.nx, ref tmpSampleCount, newSampleCount => { return newSampleCount < p.ns; }, miny, maxy, minx, maxx);
 
                 (sender as BackgroundWorker).ReportProgress(i, i);
-            }
+            });
         }
     }
 }

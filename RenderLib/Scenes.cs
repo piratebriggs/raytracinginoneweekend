@@ -141,7 +141,7 @@ namespace RenderLib
             //world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 165, 165), white), new Vector3(130, 0, 65)));
             //world.Add( new Translate( new Box(Vector3.Zero, new Vector3(165, 330, 165), white), new Vector3(265, 0, 295)));
 
-            //world.Add(new Sphere(new Vector3(0, 0, 0), 3000.0f, new DiffuseLight(new ConstantTexture(new Vector3(1, 1, 1)))));
+            world.Add(new Sphere(new Vector3(0, 0, 0), 3000.0f, new DiffuseLight(new ConstantTexture(new Vector3(1, 1, 1)))));
             /*
             for (int i = 0; i < 50; i++)
             {
