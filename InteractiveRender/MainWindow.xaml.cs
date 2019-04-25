@@ -100,10 +100,28 @@ namespace InteractiveRender
             int totalRayCount = 0;
             var pathTracer = new PathTracer(p.nx, p.ny, p.ns, false);
 
+            // single pass render to p.ns samples
+            Parallel.For(0, p.TileCount, i =>
+            {
+                var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(i);
+                uint tmpSampleCount = 0;
+                var rayCount = pathTracer.RenderScene(wl, cam, _buffer, p.nx, ref tmpSampleCount, newSampleCount => { return newSampleCount < p.ns; }, miny, maxy, minx, maxx);
+
+                (sender as BackgroundWorker).ReportProgress(i, i);
+            });
+        }
+
+        /// <summary>
+        /// Demo Renderer for debugging the ProgressChanged() event handler.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="p"></param>
+        private void RenderGradient(BackgroundWorker sender, RenderParameters p)
+        {
             // Fill buffer with gradient 
             Parallel.For(0, p.TileCount, i =>
             {
-                //Thread.Sleep(10);
+                Thread.Sleep(10);
 
                 var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(i);
                 // draw a tile of gradient color that should tile smoothly for debug purposes
@@ -114,17 +132,8 @@ namespace InteractiveRender
                         _buffer[y * _parameters.ny + x] += new Vector4((float)y / _parameters.ny, (float)x / _parameters.nx, (float)i / p.TileCount, 0);
                     }
                 }
-                //(sender as BackgroundWorker).ReportProgress(i, i);
-            });
 
-            // single pass render to p.ns samples
-            Parallel.For(0, p.TileCount, i =>
-            {
-                var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(i);
-                uint tmpSampleCount = 0;
-                var rayCount = pathTracer.RenderScene(wl, cam, _buffer, p.nx, ref tmpSampleCount, newSampleCount => { return newSampleCount < p.ns; }, miny, maxy, minx, maxx);
-
-                (sender as BackgroundWorker).ReportProgress(i, i);
+                sender.ReportProgress(i, i);
             });
         }
     }
