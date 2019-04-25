@@ -61,6 +61,35 @@ namespace RenderLib
 
          */
 
+        /// <summary>
+        /// Overload for use in framework code that doesn't have access to Memory<>
+        /// </summary>
+        /// <param name="world"></param>
+        /// <param name="cam"></param>
+        /// <param name="buffer"></param>
+        /// <param name="bufferStepSize"></param>
+        /// <param name="sampleCount"></param>
+        /// <param name="progressCallback"></param>
+        /// <param name="startRow"></param>
+        /// <param name="endRow"></param>
+        /// <param name="startCol"></param>
+        /// <param name="endCol"></param>
+        /// <returns></returns>
+        public uint RenderScene(IHitable[] world, Camera cam, Vector4[] buffer, int bufferStepSize, ref uint sampleCount, Func<uint, bool> progressCallback, int startRow = 0, int? endRow = null, int startCol = 0, int? endCol = null)
+        {
+            if (!endRow.HasValue)
+            {
+                endRow = ny - 1;
+            }
+            if (!endCol.HasValue)
+            {
+                endCol = nx - 1;
+            }
+
+            var bufferStart = buffer.AsMemory().Slice(((ny - 1) - endRow.Value) * nx + startCol);
+
+            return RenderScene(world, cam, bufferStart, bufferStepSize, ref sampleCount, progressCallback, startRow, endRow, startCol, endCol);
+        }
 
         /// <summary>
         /// 

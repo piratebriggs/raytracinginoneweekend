@@ -1,4 +1,6 @@
-﻿using RenderLib;
+﻿using raytracinginoneweekend;
+using raytracinginoneweekend.Hitables;
+using RenderLib;
 using System;
 using System.ComponentModel;
 using System.Numerics;
@@ -27,7 +29,8 @@ namespace InteractiveRender
             {
                 nx = 300,
                 ny = 300,
-                tileSize = 10
+                tileSize = 10,
+                ns = 10
             };
 
             _bitmap = new WriteableBitmap(_parameters.nx, _parameters.ny, 96, 96, PixelFormats.Rgb24, BitmapPalettes.WebPalette);
@@ -71,7 +74,7 @@ namespace InteractiveRender
                 for (var x = minx; x <= maxx; x++)
                 {
                     // No AsMemory() here in framework-land
-                    var pix = _buffer[y * _parameters.ny + x];
+                    var pix = _buffer[((_parameters.ny-1)- y) * _parameters.ny + x];
                     pixelBuffer[i++] = (byte)((float)Math.Sqrt(pix.X) * 255);
                     pixelBuffer[i++] = (byte)((float)Math.Sqrt(pix.Y) * 255);
                     pixelBuffer[i++] = (byte)((float)Math.Sqrt(pix.Z) * 255);
@@ -90,13 +93,17 @@ namespace InteractiveRender
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
         {
             var p = (RenderParameters)e.Argument;
-            Parallel.For(0, p.TileCount, i => 
+
+            var (world, cam) = Scenes.CornellScene("../../../SampleObj/teapot.obj", new SunsetquestRandom(), p.nx, p.ny);
+            var worldBVH = new BVH(world);
+            var wl = new IHitable[] { worldBVH };
+            int totalRayCount = 0;
+            var pathTracer = new PathTracer(p.nx, p.ny, p.ns, false);
+
+            // Fill buffer with gradient 
+            Parallel.For(0, p.TileCount, i =>
             {
                 var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(i);
-
-                // complex operation
-                Thread.Sleep(10);
-
                 // draw a tile of gradient color that should tile smoothly for debug purposes
                 for (var y = miny; y <= maxy; y++)
                 {
@@ -105,9 +112,18 @@ namespace InteractiveRender
                         _buffer[y * _parameters.ny + x] += new Vector4((float)y / _parameters.ny, (float)x / _parameters.nx, (float)i / p.TileCount, 0);
                     }
                 }
+                //(sender as BackgroundWorker).ReportProgress(i, i);
+            });
+
+            // single pass render to p.ns samples
+            for(var i = 0; i<p.TileCount;i++)
+            {
+                var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(i);
+                uint tmpSampleCount = 0;
+                var rayCount = pathTracer.RenderScene(wl, cam, _buffer, p.nx, ref tmpSampleCount, newSampleCount => {  return newSampleCount < p.ns; }, miny, maxy, minx, maxx);
 
                 (sender as BackgroundWorker).ReportProgress(i, i);
-            });
+            }
         }
     }
 }
