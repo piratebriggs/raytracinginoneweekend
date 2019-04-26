@@ -49,7 +49,7 @@ namespace raytracinginoneweekend
                     var tmpSampleCount = inputSampleCount;
                     var tileDetails = p.GetTileDetails(currentTile);
 
-                    var bufferStart = buffer.AsMemory().Slice(((p.ny - 1) - tileDetails.maxy) * p.nx + tileDetails.minx);
+                    var bufferStart = buffer.AsMemory().Slice(tileDetails.miny * p.nx + tileDetails.minx);
 
                     var rayCount = pathTracer.RenderScene(wl, cam, bufferStart, p.nx, ref tmpSampleCount, newSampleCount => { Console.WriteLine($"Tile: {currentTile}, {newSampleCount} Samples"); return newSampleCount < inputSampleCount + p.ns; }, tileDetails.miny, tileDetails.maxy, tileDetails.minx, tileDetails.maxx);
 
