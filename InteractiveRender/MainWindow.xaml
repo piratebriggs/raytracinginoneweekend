@@ -12,6 +12,7 @@
 
                 <Button x:Name="Stop" DockPanel.Dock="Right" Content="Stop" Click="Stop_Click"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                 <Button x:Name="Save" DockPanel.Dock="Right" Content="Save" Click="Save_Click"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                <Label MinHeight="30" x:Name="Stat" DockPanel.Dock="Left" />
                 <Label MinHeight="30" x:Name="Info" />
             </DockPanel>
             <Image x:Name="image" MinWidth="300" MinHeight="300" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />

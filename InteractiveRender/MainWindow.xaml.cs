@@ -31,7 +31,7 @@ namespace InteractiveRender
             {
                 nx = 300,
                 ny = 300,
-                tileSize = 10,
+                tileSize = 30,
                 ns = 10
             };
 
@@ -64,6 +64,8 @@ namespace InteractiveRender
 
         /// <summary>
         /// Write current tile from _buffer to _bitmap
+        /// If ProgressPercentage >= -1, UserState is a status message
+        /// Otherwise UserState is an informational message
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -71,13 +73,16 @@ namespace InteractiveRender
         {
 
             var currentTile =  e.ProgressPercentage;
-            var messsage = e.UserState.ToString();
-            if (currentTile == -1)
+            var messsage = (string)e.UserState;
+            if (currentTile >=-1)
             {
-                Info.Content += messsage;
-                return;
+                if (messsage != null) Stat.Content = messsage;
+            } else
+            {
+                if (messsage != null) Info.Content = messsage;
             }
-            Info.Content = messsage;
+
+            if (currentTile < 0) return;
 
             var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(currentTile);
 
@@ -99,7 +104,6 @@ namespace InteractiveRender
             }
 
             _bitmap.WritePixels(new Int32Rect(minx, miny, width, height), pixelBuffer, width*3, 0);
-
         }
 
         /// <summary>
@@ -121,38 +125,41 @@ namespace InteractiveRender
 
             var lockObj = new Object();
             uint totalRayCount = 0;
-            var duration = new TimeSpan();
+            int processedTiles;
+            var sw = new Stopwatch();
 
 
             while (!worker.CancellationPending)
             {
+                sw.Start();
+                processedTiles = 0;
                 // single pass render to p.ns samples
                 Parallel.For(0, p.TileCount, i =>
                 {
                     var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(i);
 
-                    var sw = Stopwatch.StartNew();
                     var inputSampleCount = tileSampleCount[i];
                     var tmpRayCount = pathTracer.RenderScene(wl, cam, _buffer, p.nx, ref tileSampleCount[i], newSampleCount => { return newSampleCount < inputSampleCount + p.ns; }, miny, maxy, minx, maxx);
-                    sw.Stop();
 
-                    string info;
                     lock(lockObj)
                     {
                         totalRayCount += tmpRayCount;
-                        duration += sw.Elapsed;
-
-                        float seconds = (float)duration.TotalMilliseconds / 1000f;
-                        float rate = totalRayCount / seconds;
-                        float mRate = rate / 1_000_000;
-
-                        info = $"totalRayCount: {totalRayCount}\r\n";
-                        info += $"BVH max depth: {worldBVH.MaxTestCount}\r\n";
-                        info += $"Duration: {seconds} | Rate: {mRate} MRays / sec.\r\n";
+                        processedTiles += 1;
                     }
 
-                    worker.ReportProgress(i, info);
+                    worker.ReportProgress(i, $"Processed Tiles: {processedTiles}/{p.TileCount}");
                 });
+
+                sw.Stop();
+                float seconds = (float)sw.ElapsedMilliseconds / 1000f;
+                float rate = totalRayCount / seconds;
+                float mRate = rate / 1_000_000;
+
+                var info = $"totalRayCount: {totalRayCount}\r\n";
+                info += $"BVH max depth: {worldBVH.MaxTestCount}\r\n";
+                info += $"Duration: {seconds} | Rate: {mRate} MRays / sec.\r\n";
+                worker.ReportProgress(-2, info);
+
             }
             worker.ReportProgress(-1, "Stopped");
         }
@@ -179,7 +186,7 @@ namespace InteractiveRender
                     }
                 }
 
-                sender.ReportProgress(i, i);
+                sender.ReportProgress(i, "");
             });
         }
     }
