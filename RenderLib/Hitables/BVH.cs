@@ -48,9 +48,12 @@ namespace raytracinginoneweekend.Hitables
                     }
                 }
             }
-            if (testCount > maxTestCount)
+            lock (this)
             {
-                maxTestCount = testCount;
+                if (testCount > maxTestCount)
+                {
+                    maxTestCount = testCount;
+                }
             }
             if(hitAnything)
             {

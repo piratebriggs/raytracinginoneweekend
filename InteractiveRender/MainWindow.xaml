@@ -6,9 +6,15 @@
         xmlns:local="clr-namespace:InteractiveRender"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <Image x:Name="image" HorizontalAlignment="Left" Height="300" Margin="10,35,0,0" VerticalAlignment="Top" Width="300"/>
-        <Button x:Name="button" Content="Button" HorizontalAlignment="Left" Margin="597,63,0,0" VerticalAlignment="Top" Width="154" Height="87" Click="Button_Click"/>
+    <Grid Margin="10,10,10,10.5">
+        <DockPanel LastChildFill="True">
+            <DockPanel LastChildFill="True" DockPanel.Dock="Bottom">
 
+                <Button x:Name="Stop" DockPanel.Dock="Right" Content="Stop" Click="Stop_Click"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                <Button x:Name="Save" DockPanel.Dock="Right" Content="Save" Click="Save_Click"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                <Label MinHeight="30" x:Name="Info" />
+            </DockPanel>
+            <Image x:Name="image" MinWidth="300" MinHeight="300" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+        </DockPanel>
     </Grid>
 </Window>

@@ -3,6 +3,7 @@ using raytracinginoneweekend.Hitables;
 using RenderLib;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ namespace InteractiveRender
         private WriteableBitmap _bitmap;
         private RenderParameters _parameters;
         private Vector4[] _buffer;
+        private BackgroundWorker _worker;
 
         public MainWindow()
         {
@@ -38,19 +40,26 @@ namespace InteractiveRender
 
             _buffer = new Vector4[_parameters.nx * _parameters.ny];
 
-            Button_Click(null, null);
+            _worker = new BackgroundWorker
+            {
+                WorkerReportsProgress = true,
+                WorkerSupportsCancellation = true
+            };
+            _worker.DoWork += Worker_DoWork; ;
+            _worker.ProgressChanged += Worker_ProgressChanged; ;
+            _worker.RunWorkerAsync(_parameters);
+
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void Stop_Click(object sender, RoutedEventArgs e)
         {
+            _worker.CancelAsync();
+            Stop.IsEnabled = false;
+        }
 
-            BackgroundWorker worker = new BackgroundWorker
-            {
-                WorkerReportsProgress = true
-            };
-            worker.DoWork += Worker_DoWork; ;
-            worker.ProgressChanged += Worker_ProgressChanged; ;
-            worker.RunWorkerAsync(_parameters);
+        private void Save_Click(object sender, RoutedEventArgs e)
+        {
+            Save.IsEnabled = false;
         }
 
         /// <summary>
@@ -61,7 +70,15 @@ namespace InteractiveRender
         private void Worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
 
-            var currentTile =  (int)e.UserState;
+            var currentTile =  e.ProgressPercentage;
+            var messsage = e.UserState.ToString();
+            if (currentTile == -1)
+            {
+                Info.Content += messsage;
+                return;
+            }
+            Info.Content = messsage;
+
             var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(currentTile);
 
             var width = maxx - minx + 1;
@@ -93,22 +110,51 @@ namespace InteractiveRender
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
         {
             var p = (RenderParameters)e.Argument;
+            var worker = (sender as BackgroundWorker);
 
             var (world, cam) = Scenes.CornellScene("../../../SampleObj/teapot.obj", new SunsetquestRandom(), p.nx, p.ny);
             var worldBVH = new BVH(world);
             var wl = new IHitable[] { worldBVH };
-            int totalRayCount = 0;
             var pathTracer = new PathTracer(p.nx, p.ny, p.ns, false);
 
-            // single pass render to p.ns samples
-            Parallel.For(0, p.TileCount, i =>
-            {
-                var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(i);
-                uint tmpSampleCount = 0;
-                var rayCount = pathTracer.RenderScene(wl, cam, _buffer, p.nx, ref tmpSampleCount, newSampleCount => { return newSampleCount < p.ns; }, miny, maxy, minx, maxx);
+            var tileSampleCount = new uint[p.TileCount];
 
-                (sender as BackgroundWorker).ReportProgress(i, i);
-            });
+            var lockObj = new Object();
+            uint totalRayCount = 0;
+            var duration = new TimeSpan();
+
+
+            while (!worker.CancellationPending)
+            {
+                // single pass render to p.ns samples
+                Parallel.For(0, p.TileCount, i =>
+                {
+                    var (minx, miny, maxx, maxy) = _parameters.GetTileDetails(i);
+
+                    var sw = Stopwatch.StartNew();
+                    var inputSampleCount = tileSampleCount[i];
+                    var tmpRayCount = pathTracer.RenderScene(wl, cam, _buffer, p.nx, ref tileSampleCount[i], newSampleCount => { return newSampleCount < inputSampleCount + p.ns; }, miny, maxy, minx, maxx);
+                    sw.Stop();
+
+                    string info;
+                    lock(lockObj)
+                    {
+                        totalRayCount += tmpRayCount;
+                        duration += sw.Elapsed;
+
+                        float seconds = (float)duration.TotalMilliseconds / 1000f;
+                        float rate = totalRayCount / seconds;
+                        float mRate = rate / 1_000_000;
+
+                        info = $"totalRayCount: {totalRayCount}\r\n";
+                        info += $"BVH max depth: {worldBVH.MaxTestCount}\r\n";
+                        info += $"Duration: {seconds} | Rate: {mRate} MRays / sec.\r\n";
+                    }
+
+                    worker.ReportProgress(i, info);
+                });
+            }
+            worker.ReportProgress(-1, "Stopped");
         }
 
         /// <summary>
